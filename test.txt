@@ -1,4 +1,0 @@
-Hello World.
-
-This is a happy application that sits here and waits.
-Bye Bye.
