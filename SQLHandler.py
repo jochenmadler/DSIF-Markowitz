@@ -16,7 +16,7 @@ con = psycopg2.connect(database=database, user=user, password=password, host=hos
 def inTable (database, user, password, host, port, directory):
 
     #create connection, we do this here, because we might need it later
-    con = psycopg2.connect(database, user, password, host, port)
+    con = psycopg2.connect(database = database, user =user, password= password,host= host, port =port)
 
     #read into dataframe
     #ATTENTION file has to be txt with tabstops as seperators, not a CSV file!
@@ -34,6 +34,7 @@ def inTable (database, user, password, host, port, directory):
     #set the index as the company names
     df.set_index('date', inplace = True)
 
+
     # transpose the dataframe so it fits our database
     df = df.transpose()
 
@@ -45,7 +46,7 @@ def inTable (database, user, password, host, port, directory):
     #*******************HERE COMES THE MAGIC*****************************
     #creates a new table out of the dataframe called 'dax' in the database dax
     # if it already exists, it only appends its values to the current database -- usefull for later
-    df.to_sql(tableName, create_engine('postgresql://postgres:'+password+'@'+host+':'+port+'//'+database), if_exists ='append', index = True)
+    df.to_sql(tableName, create_engine('postgresql://postgres:'+password+'@'+host+':'+port+'/'+database), if_exists ='append', index = True)
 
     #the previous functions is not able to realize that the index is a date, so we set it mannually here
     command = '''alter table dax 
@@ -54,29 +55,69 @@ def inTable (database, user, password, host, port, directory):
     cur = con.cursor()
     cur.execute(command)
     con.commit()
-
-
-
-
-
-
     cur.close()
 
-#input is the sting name of the table you want to have the column names, return a dataframe with the name
+#input is the sting name of the table you want to have the column names, return a list with the names
 def getColumns (tableName):
     cur = con.cursor()
     command = '''select column_name 
                 from information_schema.columns 
-                where table_name = ''' + tableName+''';'''
+                where table_name = '{}';'''.format(tableName)
     cur.execute(command)
     fetched = cur.fetchall()
     cur.close()
-    return pd.DataFrame(fetched, columns=['ColumnNames'])
+    return pd.DataFrame(fetched, columns=['ColumnNames']).values.tolist()
 
-#def addColumns()
+def addColumns(baseTable, newTable):
+    #calculate the columns that are not in the current database by creating two sets and subtracting them
+    # be aware that:
+    # set([1, 2]) - set([2, 3])
+    # results in:
+    # set([1])
+    colDif= list(set(getColumns(newTable)) - set(getColumns(baseTable)))
+    cur = con.cursor()
+    dataType = 'float8'
+    command = '''
+        alter table {}
+        '''.format(baseTable)
+    i = 0;
+    for col in colDif:
+        if i == len(colDif):
+            command = '''{}
+            add column {} {};
+            '''.format(command, col, dataType)
+            break
+        command = ''' {}
+        add column {} {},
+        '''.format(command, col, dataType )
+        i += 1
+    #******************the end of command statement is not implemented yet
+    cur.execute(command)
+    cur.close()
 
-
+#expects start date, end date and a list with company name (for now, later ticker)
+def getAP (startDate, endDate, comps):
+    cur = con.cursor()
+    #make list of comps to string
+    compsStr = ', '.join(comps)
+    #produces the command
+    command = '''
+    select {}
+    from dax
+    where index between '{}' and '{}';
+    '''.format(compsStr, startDate, endDate)
+    try:
+        cur.execute(command)
+    except psycopg2.errors.UndefinedColumn:
+        print ('psycopg2.errors.UndefinedColumn: Not a valid column name, please check!')
+        return
+    result = cur.fetchall()
+    cur.close()
+    return pd.DataFrame(result, columns=comps)
 #******************************************************MAIN******************************************
-#inTable(database,user, password, host, port, directory)
+inTable(database,user, password, host, port, directory)
+comps = ['adidas', 'allianz', 'dma']
+print(getAP('2019-01-01', '2019-02-28', comps))
+
 con.commit()
 con.close()
