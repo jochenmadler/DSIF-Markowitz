@@ -10,7 +10,8 @@ host="localhost"
 port="1997"
 directory ='/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/DAX.txt'
 #acp = adjusted closing prices
-tableName = 'acp'
+#tableName = 'acp'
+tableName = 'dax'
 con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
 
 def inTable (database, user, password, host, port, directory):
@@ -102,7 +103,7 @@ def getAP (startDate, endDate, comps):
     compsStr = ', '.join(comps)
     #produces the command
     command = '''
-    select {}
+    select  index, {}
     from dax
     where index between '{}' and '{}';
     '''.format(compsStr, startDate, endDate)
@@ -113,10 +114,10 @@ def getAP (startDate, endDate, comps):
         return
     result = cur.fetchall()
     cur.close()
-    return pd.DataFrame(result, columns=comps)
+    return pd.DataFrame(result,  columns=['date'].append(comps))
 #******************************************************MAIN******************************************
 inTable(database,user, password, host, port, directory)
-comps = ['adidas', 'allianz', 'dma']
+comps = ['adidas', 'allianz']
 print(getAP('2019-01-01', '2019-02-28', comps))
 
 con.commit()
