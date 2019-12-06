@@ -5,15 +5,15 @@ from sqlalchemy import create_engine, MetaData
 import sqlalchemy
 import psycopg2
 
-database="dsif"
+database="postgres"
 #database ="dax"
-user="boys"
+user="postgres"
 #user = "postgres"
 password="zaubermaus"
 host="localhost"
 #port might be 5432 for, if you haven't changed anything in the settings of postgres
-port="1997"
-directory ='/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/DAX.txt'
+port="5432"
+directory = "C:\\Users\mpere\Documents\Python Scripts\DSIF-Markowitz/DAX.txt"
 #acp = adjusted closing prices
 
 tableName = 'dax'
@@ -52,25 +52,25 @@ def inTable (database, user, password, host, port, directory, existingTableName)
     df.columns = df.columns.str.lower()
 
     #checks if the columns of the df already exists in the current table in SQL
-    existingColumns = getColumnsSQL(existingTableName)
+#    existingColumns = getColumnsSQL(existingTableName)
     #if some don't exists - add them
-    if len(set(df.columns)-set(existingColumns))!=0:
-        print("in the if")
-        #addColumns(existingTableName, list(existingColumns = getColumnsSQL(existingTableName)))
-        print("Type of df.columns ")
-        print (type(df.columns))
-        addColumns(existingTableName, df.columns)
+    #if len(set(df.columns)-set(existingColumns))!=0:
+     #   print("in the if")
+      #  #addColumns(existingTableName, list(existingColumns = getColumnsSQL(existingTableName)))
+       # print("Type of df.columns ")
+        #print (type(df.columns))
+        #addColumns(existingTableName, df.columns)
     #*******************HERE COMES THE MAGIC*****************************
     #creates a new table out of the dataframe called 'dax' in the database dax
     # if it already exists, it only appends its values to the current database -- usefull for later
-    print("doing the df to sql")
+    #print("doing the df to sql")
     try:
         df.to_sql(existingTableName, create_engine('postgresql://postgres:'+password+'@'+host+':'+port+'/'+database), if_exists='append', index=True)
     except sqlalchemy.exc.DataError:
         print("******************** \n"
               " Your input file is apparently in the wrong format, please check if the date is in the format YYYY-MM-DD and the file is in txt with tapstop not as CSV \n"
               "********************")
-    print("done with dataframe to sql")
+    #print("done with dataframe to sql")
     #the previous functions is not able to realize that the index is a date, so we set it mannually here
     command = '''alter table {} 
                 alter column index 
@@ -124,6 +124,7 @@ def addColumns(baseTable, newColumns):
 
 #expects start date, end date and a list with company name (for now, later ticker)
 def getAP (startDate, endDate, comps):
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
     #make list of comps to string
     compsStr = ', '.join(comps)
@@ -140,6 +141,7 @@ def getAP (startDate, endDate, comps):
         print ('psycopg2.errors.UndefinedColumn: Not a valid column name, please check!')
         return
     result = cur.fetchall()
+    con.commit()
     cur.close()
 
     names = ['date']
@@ -149,10 +151,9 @@ def getAP (startDate, endDate, comps):
     result.set_index('date', inplace=True)
     return result
 #******************************************************MAIN******************************************
-directory2 ='/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/AEX.txt'
-inTable(database,user, password, host, port, directory2, "dax")
-comps = ['adidas', 'adyen']
-print(getAP('2019-01-01', '2019-02-28', comps))
+#inTable(database,user, password, host, port, directory, "dax")
+comps = ['adidas', 'allianz']
+print(getAP('2018-01-01', '2019-01-01',  comps))
 
 con.commit()
 con.close()
