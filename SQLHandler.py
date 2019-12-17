@@ -151,9 +151,9 @@ def getAP (startDate, endDate, comps):
     result.set_index('date', inplace=True)
     return result
 #******************************************************MAIN******************************************
-#inTable(database,user, password, host, port, directory, "dax")
+inTable(database,user, password, host, port, directory, "dax")
 comps = ['adidas', 'allianz']
-print(getAP('2018-01-01', '2019-01-01',  comps))
-
+#print(getAP('2018-01-01', '2019-01-01',  comps))
+getAP('2018-01-01', '2019-01-01',  comps)
 con.commit()
 con.close()
