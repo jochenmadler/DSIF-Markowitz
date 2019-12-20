@@ -34,7 +34,7 @@ def inTable (database, user, password, host, port, directory, existingTableName)
     codeNames = df [['name', 'isin', 'dscd', 'index']]
     #codeNames.columns = codeNames.columns.str.lower()
     #codeNames['isin'].str.lower()
-    print(codeNames)
+    #print(codeNames)
     try:
         codeNames.to_sql(codeRegister, create_engine('postgresql://'+user+':'+password+'@'+host+':'+port+'/'+database), if_exists='append', index=False)
     except sqlalchemy.exc.DataError:
@@ -53,14 +53,13 @@ def inTable (database, user, password, host, port, directory, existingTableName)
     df = df.transpose()
 
     #checks if the columns of the df already exists in the current table in SQL
-    #existingColumns = getColumnsSQL(existingTableName)
+    existingColumns = getColumnsSQL(existingTableName)
     #if some don't exists - add them
-    if False:
-        #len(set(df.columns)-set(existingColumns))!=0:
-        print("in the if")
+    if len(set(df.columns)-set(existingColumns))!=0:
+        #print("in the if")
         #addColumns(existingTableName, list(existingColumns = getColumnsSQL(existingTableName)))
-        print("Type of df.columns ")
-        print (type(df.columns))
+        #print("Type of df.columns ")
+        #print (type(df.columns))
         addColumns(existingTableName, df.columns)
     #*******************HERE COMES THE MAGIC*****************************
     #creates a new table out of the dataframe called 'dax' in the database dax
@@ -103,7 +102,7 @@ def addColumns(baseTable, newColumns):
     # results in:
     # set([1])
     colDif= list(set(newColumns) - set(getColumnsSQL(baseTable)))
-    print(colDif)
+    #print(colDif)
     cur = con.cursor()
     dataType = 'float8'
     command = '''
@@ -121,7 +120,7 @@ def addColumns(baseTable, newColumns):
         '''.format(command, col, dataType )
         i += 1
     #******************the end of command statement is not implemented yet
-    print(command)
+    #print(command)
     cur.execute(command)
     cur.close()
     con.commit()
@@ -136,7 +135,7 @@ def getACP (startDate, endDate, comps):
 
     compsStr = ', '.join([comp.lower() for comp in comps])
     #compsStr = ', '.join(comps)
-    print(compsStr)
+    #print(compsStr)
     #produces the command
     command = '''
         select index, {}
@@ -171,7 +170,7 @@ def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
         where {} like '%{}%';
         '''.format(selected, assetClass, columnToSearch, searchterm)
     #exception catch is not really necessary here, but is ok anyway
-    print(command)
+    #print(command)
     try:
         cur.execute(command)
     except psycopg2.errors.UndefinedColumn:
@@ -180,6 +179,16 @@ def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
     result = pd.DataFrame(cur.fetchall())
     cur.close()
     return result
+
+def saveUser (optimizeResult, optimizeRequest):
+    #list mit procedures
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    optimizeResult.security_weights.to_sql('weights', create_engine('postgresql://'+user+':'+password+'@'+host+":"+port+"/"+database), if_exists='append', index = True)
+
+
+def getResult (name):
+    #return an optimizeResult - object
+    return
 
 #******************************************************MAIN******************************************
 #directory2 ='/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/AEX.txt'
