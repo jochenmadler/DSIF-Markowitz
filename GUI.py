@@ -6,6 +6,9 @@ from dash.dependencies import Input, Output, State
 # import function to call data from Alex' SQLHandler
 from SQLHandler import findComp
 
+# import function to optimize portfolio from Marcl's OptimizeProcedure
+import OptimizeProcedure as op
+
 # preload all stock data (from local PostgreSQL) into df's: [0: Name, 1: ISIN, 2: Index]
 df_DAX30 = findComp('DAX30', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_DAX30.columns = ['Name', 'ISIN', 'Index']
@@ -523,7 +526,13 @@ def update_portfolio_name(n_clicks, portfolio_name_input):
     return '''{}'''.format(portfolio_name_input)
 
 
+# test request (create)
+request = op.optimizeRequest(1000,['de000a1ewww0', 'de0008404005', 'de000basf111'])
+procedure = op.optimizeProcedure(request)
+s = procedure.optimize_result.sharpe_ratio
 
+
+print('DONE')
 
 # execute program
 

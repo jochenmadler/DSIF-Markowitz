@@ -68,7 +68,7 @@ class optimizeProcedure:
         self.optimize_request = optimize_request
 
         #generate optimize_data
-        self.optimize_data = optimizeData(sh.getAP(optimize_request.period_start, '2019-01-11', optimize_request.ISIN_list))
+        self.optimize_data = optimizeData(sh.getACP(optimize_request.period_start, '2019-01-11', optimize_request.ISIN_list))
 
         #ToDo: Decide for which KPI to optimize for
         #define objective function to use
