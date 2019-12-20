@@ -56,7 +56,7 @@ def inTable (database, user, password, host, port, directory, existingTableName)
     #existingColumns = getColumnsSQL(existingTableName)
     #if some don't exists - add them
     if False:
-            #len(set(df.columns)-set(existingColumns))!=0:
+        #len(set(df.columns)-set(existingColumns))!=0:
         print("in the if")
         #addColumns(existingTableName, list(existingColumns = getColumnsSQL(existingTableName)))
         print("Type of df.columns ")
@@ -65,7 +65,7 @@ def inTable (database, user, password, host, port, directory, existingTableName)
     #*******************HERE COMES THE MAGIC*****************************
     #creates a new table out of the dataframe called 'dax' in the database dax
      #if it already exists, it only appends its values to the current database -- usefull for later
-    print("doing the df to sql")
+    #print("doing the df to sql")
     try:
         df.to_sql(existingTableName, create_engine('postgresql://'+user+':'+password+'@'+host+':'+port+'/'+database), if_exists='append', index=True)
     except sqlalchemy.exc.DataError:
