@@ -5,12 +5,19 @@ from sqlalchemy import create_engine, MetaData
 import sqlalchemy
 import psycopg2
 
-database="dsif"
-user="boys"
+# ist bei euch "postgres"
+database = 'postgres'
+user = 'postgres'
+#database="dsif"
+# ist bei euch postgres
+#user="boys"
+# kann auch euer eigenes Passwort
 password="zaubermaus"
+#port is immer localhost
 host="localhost"
 #port might be 5432 for, if you haven't changed anything in the settings of postgres
-port="1997"
+port = '5432''
+#port="1997"
 directory ='/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/DAX.txt'
 codeRegister = 'companies'
 
