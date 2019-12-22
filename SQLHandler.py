@@ -32,9 +32,6 @@ def inTable (database, user, password, host, port, directory, existingTableName)
     #reading in the codenames so we can use them later again to match codes with names
     #****************************Handels the Companies Names ISIN  DSCD and Index***********************************
     codeNames = df [['name', 'isin', 'dscd', 'index']]
-    #codeNames.columns = codeNames.columns.str.lower()
-    #codeNames['isin'].str.lower()
-    #print(codeNames)
     try:
         codeNames.to_sql(codeRegister, create_engine('postgresql://'+user+':'+password+'@'+host+':'+port+'/'+database), if_exists='append', index=False)
     except sqlalchemy.exc.DataError:
@@ -51,16 +48,20 @@ def inTable (database, user, password, host, port, directory, existingTableName)
 
     # transpose the dataframe so it fits our database
     df = df.transpose()
-
+    con.commit()
     #checks if the columns of the df already exists in the current table in SQL
-    existingColumns = getColumnsSQL(existingTableName)
+    #existingColumns = getColumnsSQL(existingTableName)
     #if some don't exists - add them
-    if len(set(df.columns)-set(existingColumns))!=0:
-        #print("in the if")
-        #addColumns(existingTableName, list(existingColumns = getColumnsSQL(existingTableName)))
-        #print("Type of df.columns ")
-        #print (type(df.columns))
-        addColumns(existingTableName, df.columns)
+    #    print("in the nothonign")
+    #if existingColumns is not None:
+    #    if len(set(df.columns)-set(existingColumns))!=0:
+    #        print(set(df.columns))
+    #        print(set(existingColumns))
+    #        #addColumns(existingTableName, list(existingColumns = getColumnsSQL(existingTableName)))
+            #print("Type of df.columns ")
+            #print (type(df.columns))
+
+    #        addColumns(existingTableName, df.columns)
     #*******************HERE COMES THE MAGIC*****************************
     #creates a new table out of the dataframe called 'dax' in the database dax
      #if it already exists, it only appends its values to the current database -- usefull for later
@@ -90,10 +91,10 @@ def getColumnsSQL (tableName):
     fetched = cur.fetchall()
     cur.close()
     #index out of range, hier muss noch nachgeholfen werden
-    if fetched is not []:
-        return pd.DataFrame(fetched, columns=['ColumnNames']).values.tolist()[0]
+    if not fetched:
+        return
     else:
-        return None
+        return pd.DataFrame(fetched, columns=['ColumnNames']).values.tolist()[0]
 def addColumns(baseTable, newColumns):
     #new columns must be a list, basetable must be the name of the table where the columns should be added to
     #calculate the columns that are not in the current database by creating two sets and subtracting them
@@ -120,7 +121,7 @@ def addColumns(baseTable, newColumns):
         '''.format(command, col, dataType )
         i += 1
     #******************the end of command statement is not implemented yet
-    #print(command)
+
     cur.execute(command)
     cur.close()
     con.commit()
@@ -199,3 +200,5 @@ inTable(database,user, password, host, port, directory, tableName)
 #getColumnsSQL(tableName)
 con.commit()
 con.close()
+
+# Nr. 1
