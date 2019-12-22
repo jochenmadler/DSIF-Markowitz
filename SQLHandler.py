@@ -16,7 +16,7 @@ password="zaubermaus"
 #port is immer localhost
 host="localhost"
 #port might be 5432 for, if you haven't changed anything in the settings of postgres
-port = '5432''
+port = '5432'
 #port="1997"
 directory ='/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/DAX.txt'
 codeRegister = 'companies'
