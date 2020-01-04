@@ -1,17 +1,14 @@
 
-import OptimizeProcedure as op
-import SQLHandler as sh
+import User as us
 
-import time
-start_time = time.time()
-
-comps = ['adidas', 'allianz','basf','bmw','bayer']
-data=sh.getAP('2019-01-01', '2019-01-11', comps)
-
-#data = [[3,4,2,3],[5,2,3,4],[2,4,2,4],[3,5,2,7],[4,2,5,3],[2,6,2,3]]
-#df = pd.DataFrame(columns=["A","B","C","D"],index=["T1","T2","T3","T4","T5","T6"],data=data)
+from datetime import datetime
+start=datetime.now()
 
 
-gui_request = op.optimizeRequest(10000, comps)
-procedure = op.optimizeProcedure(optimize_request=gui_request)
-print("done")
+user = us.User("testID", 123, 10000,['de000a1ewww0', 'de0008404005', 'de000basf111','de000a1ewww4'], optimize_objective="r")
+user.optimize_req()
+print("done optimizing")
+user.rebalance_req()
+print("done rebalancing")
+
+print (datetime.now()-start)
