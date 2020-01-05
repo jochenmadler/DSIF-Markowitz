@@ -1,9 +1,12 @@
-# Version 1.0.0
+# Version 1.0.1
 import dash
+import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 from datetime import datetime as dt
+import pandas as pd
 
 # import function to call data from Alex' SQLHandler
 from SQLHandler import findComp
@@ -57,7 +60,6 @@ d_SSE = df_.to_dict('list')
 
 # concatenate all dicts to one: all_stock_options
 all_stock_options = dict(d_Dax30, **d_CAC40, **d_FTSE100, **d_HSI, **d_IBEX35, **d_SSE)
-print(all_stock_options)
 
 # set up app and design style
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -146,7 +148,7 @@ app.layout = html.Div([
                           type='number',
                           min=0,
                           step=10,
-                          placeholder='1000',
+                          value=1000,
                           )
             ], style={
                 'width': '50%',
@@ -492,10 +494,8 @@ app.layout = html.Div([
                     ''')
             ]),
 
-            #first row: start date
             html.Div([
                 html.Div([
-                    #left
                     dcc.Markdown('''
                         Start Date:
                         ''')
@@ -525,9 +525,8 @@ app.layout = html.Div([
                 'verticalAlign': 'middle'
             }),
 
-            #second row: end date
             html.Div([
-html.Div([
+                html.Div([
                     #left
                     dcc.Markdown('''
                         End Date:
@@ -569,9 +568,9 @@ html.Div([
             'display': 'inline-block'
         }),
 
-        ##INPUT 8: 'portfolio_creation_input'
+        ##INPUT 8: 'portfolio_creation_button_input'
         html.Div([
-            html.Button(id='portfolio_creation_input',
+            html.Button(id='portfolio_creation_button_input',
                         children='Create Portfolio')
         ], style={
             'verticalAlign': 'middle'
@@ -591,9 +590,9 @@ html.Div([
 
         ##OUTPUT 1: 'portfolio_name_output'
         html.Div([
-            html.H5(
+            html.H4(
                 id='portfolio_name_output',
-                children='My world portfolio',
+                children='',
                 style={
                      'verticalAlign': 'middle',
                      'textAlign': 'center'
@@ -606,7 +605,49 @@ html.Div([
             'display': 'inline-block'
         }),
 
-        ##OUTPUT 2: 'portfolio_pie_chart_output'
+        html.Div([
+            ##OUTPUT 2: 'portfolio_sharpe_ratio_output'
+            html.Div(
+                id='portfolio_sharpe_ratio_output',
+                style={
+                    'width': '45%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            ),
+            ##OUTPUT 3: 'portfolio_return_output'
+            html.Div(
+                id='portfolio_return_output',
+                style={
+                    'width': '20%',
+                    'float': 'middle',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            ),
+            ##OUTPUT 3: 'portfolio_std_output'
+            html.Div(
+                id='portfolio_std_output',
+                style={
+                    'width': '45%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            )
+        ], style={
+            'width': '99%',
+            'display': 'table',
+            'verticalAlign': 'middle'
+        }),
+
+        html.Hr(style={
+            'width': '99%',
+            'display': 'inline-block'
+        }),
+
+        ##OUTPUT 5: 'portfolio_pie_chart_output'
         html.Div([
             dcc.Graph(id='portfolio_pie_chart_output')
         ]),
@@ -616,9 +657,9 @@ html.Div([
             'display': 'inline-block'
         }),
 
-        ##OUTPUT 3: 'portfolio_table_output'
+        ##OUTPUT 6: 'portfolio_table_output'
         html.Div([
-            dcc.Graph(id='portfolio_table_output')
+            dash_table.DataTable(id='portfolio_table_output')
         ])
 
     ], style={
@@ -651,12 +692,21 @@ html.Div([
 #4.5.2: 'portfolio_asset_HSI_input'
 #4.6.1: 'portfolio_asset_SSE_activate'
 #4.6.2: 'portfolio_asset_SSE_input'
-#5: 'portfolio_creation_input'
+#5.1: 'portfolio_broker_fix_input'
+#5.2: 'portfolio_broker_var_input'
+#6: 'portfolio_asset_split_input'
+#7.1: 'portfolio_time_period_start_input'
+#7.2: 'portfolio_time_period_end_input'
+#8: 'portfolio_creation_button_input'
 
 #OUTPUTS:
 #1: 'portfolio_name_output'
-#2: 'portfolio_pie_chart_output'
-#3: 'portfolio_table_output'
+#2: 'portfolio_sharpe_ratio_output'
+#4: 'portfolio_return_output'
+#3: 'portfolio_std_output'
+#5: 'portfolio_pie_chart_output'
+#6: 'portfolio_table_output'
+
 
 # activate DAX30 Dropdown menu when DAX30 Checklist is ticked
 @app.callback(Output('portfolio_asset_DAX30_input', 'options'),
@@ -721,24 +771,176 @@ def set_SSE_Dropdown(value_SSE):
 # select all options in SSE when SSE Checklist is ticked - #TODO
 
 
-@app.callback(Output('portfolio_name_output', 'children'), #2 OUTPUT graphs can be added here
-              [Input('portfolio_creation_input', 'n_clicks')],
-              [State('portfolio_name_input', 'value')])
+###DEF 1: create_portfolio
+@app.callback([Output('portfolio_name_output', 'children'),
+               Output('portfolio_sharpe_ratio_output', 'children'),
+               Output('portfolio_return_output', 'children'),
+               Output('portfolio_std_output', 'children'),
+               Output('portfolio_table_output', 'data'),
+               Output('portfolio_table_output', 'columns')],
+              [Input('portfolio_creation_button_input', 'n_clicks')],
+              [State('portfolio_name_input', 'value'),
+               State('portfolio_amount_input', 'value'),
+               State('portfolio_risk_input', 'value'),
+               State('portfolio_asset_DAX30_input', 'value'),
+               State('portfolio_asset_CAC40_input', 'value'),
+               State('portfolio_asset_FTSE100_input', 'value'),
+               State('portfolio_asset_IBEX35_input', 'value'),
+               State('portfolio_asset_HSI_input', 'value'),
+               State('portfolio_asset_SSE_input', 'value'),
+               State('portfolio_broker_fix_input', 'value'),
+               State('portfolio_broker_var_input', 'value'),
+               State('portfolio_asset_split_input', 'value'),
+               State('portfolio_time_period_start_input', 'date'),
+               State('portfolio_time_period_end_input', 'date')])
+def create_portfolio(n_clicks,
+                     portfolio_name_input,
+                     portfolio_amount_input,
+                     portfolio_risk_input,
+                     portfolio_asset_DAX30_input,
+                     portfolio_asset_CAC40_input,
+                     portfolio_asset_FTSE100_input,
+                     portfolio_asset_IBEX35_input,
+                     portfolio_asset_HSI_input,
+                     portfolio_asset_SSE_input,
+                     portfolio_broker_fix_input,
+                     portfolio_broker_var_input,
+                     portfolio_asset_split_input,
+                     portfolio_time_period_start_input,
+                     portfolio_time_period_end_input):
+    if n_clicks is None:
+        raise PreventUpdate
 
-###DEF 1: UPDATE PORTFOLIO NAME
-def update_portfolio_name(n_clicks, portfolio_name_input):
-    return '''{}'''.format(portfolio_name_input)
+    if portfolio_name_input is not None and portfolio_amount_input is not None:
+        name = update_portfolio_name(portfolio_name_input)
+
+        request = op.optimizeRequest(1000, ['de000a1ewww0', 'de0008404005', 'de000basf111'])
+        procedure = op.optimizeProcedure(request)
+
+        if procedure.optimize_result.sharpe_ratio:
+            s = 'Sharpe ratio: {:.2f}'.format(procedure.optimize_result.sharpe_ratio)
+        else:
+            s = 'Sharpe ratio: 0.00'
+        if procedure.optimize_result.total_return:
+            r = 'Total return: {:.2f}'.format(procedure.optimize_result.total_return)
+        else:
+            r = 'Total return: 0.00'
+        if procedure.optimize_result.total_volatility:
+            std = 'Standard dev.: {:.2f}'.format(procedure.optimize_result.total_volatility)
+        else:
+            std = 'Standard dev.: 0.00'
+
+        portfolio_table_output = procedure.optimize_result.security_weights
+        data = portfolio_table_output.to_dict('records')
+        columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
+
+        return name, s, r, std, data, columns
 
 
-# test request (create)
-request = op.optimizeRequest(1000,['de000a1ewww0', 'de0008404005', 'de000basf111'])
-procedure = op.optimizeProcedure(request)
-s = procedure.optimize_result.sharpe_ratio
+        #TODO: optimizer input preparation
+#        ISIN_list = get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
+#                                             portfolio_asset_CAC40_input,
+#                                            portfolio_asset_FTSE100_input,
+#                                              portfolio_asset_IBEX35_input,
+#                                              portfolio_asset_HSI_input,
+#                                              portfolio_asset_SSE_input)
+#        optimize_objective = get_optimize_objective_char(portfolio_risk_input)
+#        period_start = portfolio_time_period_start_input.strftime('%Y-%m-%d')
+#        period_end = portfolio_time_period_end_input.strftime('%Y-%m-%d')
+#        broker_fix = int(portfolio_broker_fix_input)
+#        broker_var = int(portfolio_broker_var_input)
+#        split_shares = get_split_share_boolean(portfolio_asset_split_input)
+
+        #TODO: optimizer object creation
+#        request = op.optimizeRequest(portfolio_amount_input, ISIN_list)
+#        procedure = op.optimizeProcedure(request)
+
+        #TODO: optimizer object result retrieval
+#        portfolio_sharpe_ratio = procedure.optimize_result.sharpe_ratio
+#        portfolio_return = procedure.optimize_result.total_return
+#        portfolio_std = procedure.optimize_result.total_volatility
+#        portfolio_table_output = procedure.optimize_result.security_weights
+        # here, new column with names (from isins) must be concatenated to portfolio_table_output
+#        data = portfolio_table_output.to_dict('records')
+#        columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
+
+        #TODO: return outputs in order
+#        return name, portfolio_sharpe_ratio, portfolio_return, portfolio_std, data, columns
 
 
-print('DONE')
+### test request (create) tested on 20.12.2019 with MPSB
+# request = op.optimizeRequest(1000,['de000a1ewww0', 'de0008404005', 'de000basf111'])
+# procedure = op.optimizeProcedure(request)
+# s = procedure.optimize_result.sharpe_ratio
 
-# execute program
 
+### Helper-Functions
+def update_portfolio_name(portfolio_name_input):
+        return '''{}'''.format(portfolio_name_input)
+
+def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
+                                              portfolio_asset_CAC40_input,
+                                              portfolio_asset_FTSE100_input,
+                                              portfolio_asset_IBEX35_input,
+                                              portfolio_asset_HSI_input,
+                                              portfolio_asset_SSE_input):
+    isin_list = []
+
+    if portfolio_asset_DAX30_input is not None:
+        for x in portfolio_asset_DAX30_input:
+            if x in df_DAX30.Name.values:
+                isin = df_DAX30[df_DAX30['Name'] == x]['ISIN'][0]
+                isin_list.append(isin)
+
+    if portfolio_asset_CAC40_input is not None:
+        for x in portfolio_asset_CAC40_input:
+            if x in df_CAC40.Name.values:
+                isin = df_CAC40[df_CAC40['Name'] == x]['ISIN'][0]
+                isin_list.append(isin)
+
+    if portfolio_asset_FTSE100_input is not None:
+        for x in portfolio_asset_FTSE100_input:
+            if x in df_FTSE100.Name.values:
+                isin = df_FTSE100[df_FTSE100['Name'] == x]['ISIN'][0]
+                isin_list.append(isin)
+
+    if portfolio_asset_IBEX35_input is not None:
+        for x in portfolio_asset_IBEX35_input:
+            if x in df_IBEX35.Name.values:
+                isin = df_IBEX35[df_IBEX35['Name'] == x]['ISIN'][0]
+                isin_list.append(isin)
+
+    if portfolio_asset_HSI_input is not None:
+        for x in portfolio_asset_HSI_input:
+            if x in df_HSI.Name.values:
+                isin = df_HSI[df_HSI['Name'] == x]['ISIN'][0]
+                isin_list.append(isin)
+
+    if portfolio_asset_SSE_input is not None:
+        for x in portfolio_asset_SSE_input:
+            if x in df_SSE.Name.values:
+                isin = df_SSE[df_SSE['Name'] == x]['ISIN'][0]
+                isin_list.append(isin)
+
+    return isin_list
+
+def get_asset_name_to_isin_list(security_weights):
+    #converts isin to name
+    return
+
+def get_optimize_objective_char(portfolio_risk_input):
+    return {
+        '0' : 'v',
+        '1' : 'r',
+        '2' : 's'
+    }[portfolio_risk_input]
+
+def get_split_share_boolean(portfolio_asset_split_input):
+    return {
+        '0' : False,
+        '1' : True
+    }[portfolio_asset_split_input]
+
+### Execute program
 if __name__ == '__main__':
     app.run_server(debug=True)
