@@ -1,4 +1,4 @@
-# Version 1.0.1
+# Version 1.0.2
 import dash
 import dash_table
 import dash_core_components as dcc
@@ -10,8 +10,8 @@ import pandas as pd
 
 # import function to call data from Alex' SQLHandler
 from SQLHandler import findComp
-# import function to optimize portfolio from Marcl's OptimizeProcedure
-import OptimizeProcedure as op
+#import function to optimize portfolio from Marcl's OptimizeProcedure
+import User as u
 
 # preload all stock data (from local PostgreSQL) into df's: [0: Name, 1: ISIN, 2: Index]
 df_DAX30 = findComp('DAX30', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
@@ -814,23 +814,30 @@ def create_portfolio(n_clicks,
     if portfolio_name_input is not None and portfolio_amount_input is not None:
         name = update_portfolio_name(portfolio_name_input)
 
-        request = op.optimizeRequest(1000, ['de000a1ewww0', 'de0008404005', 'de000basf111'])
-        procedure = op.optimizeProcedure(request)
+        user = u.User('Testname', 10000, ['de000a1ewww0', 'de0008404005', 'de000basf111'], broker_var=2)
+        user.optimize_req()
+        print("JETZT WIRD GEREBALANCED")
+        user.rebalance_req()
 
-        if procedure.optimize_result.sharpe_ratio:
-            s = 'Sharpe ratio: {:.2f}'.format(procedure.optimize_result.sharpe_ratio)
+#        request = op.optimizeRequest(1000, ['de000a1ewww0', 'de0008404005', 'de000basf111'])
+#        procedure = op.optimizeProcedure(request)
+
+        procedure = user.req_history[-1][1]
+
+        if procedure.sharpe_ratio:
+            s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
         else:
             s = 'Sharpe ratio: 0.00'
-        if procedure.optimize_result.total_return:
-            r = 'Total return: {:.2f}'.format(procedure.optimize_result.total_return)
+        if procedure.total_return:
+            r = 'Total return: {:.2f}'.format(procedure.total_return)
         else:
             r = 'Total return: 0.00'
-        if procedure.optimize_result.total_volatility:
-            std = 'Standard dev.: {:.2f}'.format(procedure.optimize_result.total_volatility)
+        if procedure.total_volatility:
+            std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
         else:
             std = 'Standard dev.: 0.00'
 
-        portfolio_table_output = procedure.optimize_result.security_weights
+        portfolio_table_output = procedure.gui_weights
         data = portfolio_table_output.to_dict('records')
         columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
 
