@@ -1,4 +1,4 @@
-# Version: 2.0
+# Version: 3.0
 
 # Workflow
 # 1. User gets initialized with User(id, budget, ISIN_list, etc. )
@@ -17,8 +17,9 @@ class User():
     id = None
     broker_fix = None
     broker_var = None
-    split_shares = None
+    #split_shares = None
     optimize_objective = None
+    initial_budget = None
     budget = None
     ISIN_list = None
     time_interval = None
@@ -31,6 +32,7 @@ class User():
 
         self.id = id
         self.budget = budget
+        self.initial_budget = budget
         self.ISIN_list = ISIN_list
         self.time_interval = time_interval
         self.optimize_objective = optimize_objective
