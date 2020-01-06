@@ -40,7 +40,7 @@ class User():
         self.split_shares = split_shares
 
 
-    def optimize_req(self, period_end = '2018-10-0'):
+    def optimize_req(self, period_end = '2018-10-01'):
         optimize_request = optimizeRequest()
         optimize_request.user = self
         optimizeRequest.period_end = period_end
@@ -52,7 +52,7 @@ class User():
 
 
 
-    def rebalance_req(self, period_end = '2019-10-0'):
+    def rebalance_req(self, period_end = '2019-10-01'):
         optimize_rebalance = optimizeRebalance()
         optimize_rebalance.user = self
         optimize_rebalance.period_end = period_end

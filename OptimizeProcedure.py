@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 import scipy.optimize as sco
 import numpy as np
-#import SQLHandler as sh
+import SQLHandler as sh
 import ObjectiveFunction as of
 import pandas as pd
 import User as u
@@ -56,12 +56,14 @@ class optimizeProcedure():
 
         #ToDo: delete quick fix for testing
         #generate optimize_data
-        #self.optimize_data = optimizeData(sh.getACP(optimize_request.user.period_start, optimize_request.period_end, optimize_request.user.ISIN_list))
+
+        raw_data = sh.getACP(optimize_request.user.period_start, optimize_request.period_end, optimize_request.user.ISIN_list)
+        self.optimize_data = optimizeData(raw_data)
 
         #-------------------------------------------------------------------------------------------------------------
-        data = [[3,4,2,3],[5,2,3,4],[2,4,2,4],[3,5,2,7],[4,2,5,3],[2,6,2,3]]
-        df = pd.DataFrame(columns=['de000a1ewww0', 'de0008404005', 'de000basf111','de000a1ewww4'],index=["T1","T2","T3","T4","T5","T6"],data=data)
-        self.optimize_data = optimizeData(df)
+        #data = [[3,4,2,3],[5,2,3,4],[2,4,2,4],[3,5,2,7],[4,2,5,3],[2,6,2,3]]
+        #df = pd.DataFrame(columns=['de000a1ewww0', 'de0008404005', 'de000basf111','de000a1ewww4'],index=["T1","T2","T3","T4","T5","T6"],data=data)
+        #self.optimize_data = optimizeData(df)
         #-------------------------------------------------------------------------------------------------------------
 
         self.obj_function = of.objFunction_basicTrans()

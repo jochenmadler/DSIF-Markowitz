@@ -17,7 +17,7 @@ class objFunction(ABC):
         optimizeProcedure.optimize_result.security_weights = pd.DataFrame(data=[port_weights.tolist()],
                                                                    columns=optimizeProcedure.optimize_data.ISIN_list, index=["weigths"])
         optimizeProcedure.optimize_result.return_df = return_df
-        optimizeProcedure.optimize_result.port_return = port_return
+        optimizeProcedure.optimize_result.total_return = port_return
 
 
 #model with basic transaction cost
