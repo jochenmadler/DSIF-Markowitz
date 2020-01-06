@@ -1,4 +1,4 @@
-# Version 1.0.2
+# Version 1.0.3
 import dash
 import dash_table
 import dash_core_components as dcc
@@ -61,6 +61,9 @@ d_SSE = df_.to_dict('list')
 # concatenate all dicts to one: all_stock_options
 all_stock_options = dict(d_Dax30, **d_CAC40, **d_FTSE100, **d_HSI, **d_IBEX35, **d_SSE)
 
+#print('df_DAX30:\n', df_DAX30.head(), '\n')
+#print('ADIDAS ISIN:', df_DAX30.loc[df_DAX30['Name'] == 'ADIDAS'].iloc[0]['ISIN'])
+
 # set up app and design style
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -111,7 +114,7 @@ app.layout = html.Div([
             html.Div([
                 dcc.Input(id='portfolio_name_input',
                           type='text',
-                          placeholder='my world portfolio',
+                          placeholder='My World Portfolio',
                           )
             ], style={
                 'width': '50%',
@@ -511,7 +514,8 @@ app.layout = html.Div([
                         date=dt(1990, 1, 1),
                         min_date_allowed=dt(1990, 1, 1),
                         max_date_allowed=dt(2019, 9, 1),
-                        display_format='DD/MM/YYYY'
+                        display_format='DD/MM/YYYY',
+                        with_portal=True
                     )
                 ], style={
                     'width': '50%',
@@ -543,7 +547,8 @@ app.layout = html.Div([
                         date=dt(2018, 9, 1),
                         min_date_allowed=dt(1991, 1, 1),
                         max_date_allowed=dt(2019, 9, 1),
-                        display_format='DD/MM/YYYY'
+                        display_format='DD/MM/YYYY',
+                        with_portal=True
                     )
                 ], style={
                     'width': '50%',
@@ -770,7 +775,6 @@ def set_SSE_Dropdown(value_SSE):
         return [{'label': '', 'value': ''}]
 # select all options in SSE when SSE Checklist is ticked - #TODO
 
-
 ###DEF 1: create_portfolio
 @app.callback([Output('portfolio_name_output', 'children'),
                Output('portfolio_sharpe_ratio_output', 'children'),
@@ -814,15 +818,40 @@ def create_portfolio(n_clicks,
     if portfolio_name_input is not None and portfolio_amount_input is not None:
         name = update_portfolio_name(portfolio_name_input)
 
-        user = u.User('Testname', 10000, ['de000a1ewww0', 'de0008404005', 'de000basf111'], broker_var=2)
+        #optimizer input preparation
+        ISIN_list = get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
+                                                portfolio_asset_CAC40_input,
+                                                portfolio_asset_FTSE100_input,
+                                                portfolio_asset_IBEX35_input,
+                                                portfolio_asset_HSI_input,
+                                                portfolio_asset_SSE_input)
+        optimize_objective = get_optimize_objective_char(portfolio_risk_input)
+        #start and end dates as string - cutoff timestamps
+        period_start = portfolio_time_period_start_input[:-9]
+        period_end = portfolio_time_period_end_input[:-9]
+        if portfolio_broker_fix_input is not None:
+            broker_fix = float(portfolio_broker_fix_input)
+        if portfolio_broker_var_input is not None:
+            broker_var = int(portfolio_broker_var_input)
+        split_shares = get_split_share_boolean(portfolio_asset_split_input)
+
+        print('Selected ISIN_list:', ISIN_list)
+
+        #optimizer object creation
+        user = u.User(name, portfolio_amount_input, ISIN_list)
+        #user = u.User(name, portfolio_amount_input, ISIN_list,                                 | done
+        #              optimize_objective=optimize_objective, period_start=period_start,        | tbd MP
+        #              broker_fix=broker_fix, broker_var=broker_var,split_shares=split_shares)  | tbd MP
+
         user.optimize_req()
-        print("JETZT WIRD GEREBALANCED")
-        user.rebalance_req()
-
-#        request = op.optimizeRequest(1000, ['de000a1ewww0', 'de0008404005', 'de000basf111'])
-#        procedure = op.optimizeProcedure(request)
-
         procedure = user.req_history[-1][1]
+
+        #Hardcoded with Marcl am 05.01.2020
+        #user = u.User('Testname', 10000, ['de000a1ewww0', 'de0008404005', 'de000basf111'], broker_var=2)
+        #user.optimize_req()
+        #print("JETZT WIRD GEREBALANCED")
+        #user.rebalance_req()
+        #procedure = user.req_history[-1][1]
 
         if procedure.sharpe_ratio:
             s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
@@ -838,47 +867,15 @@ def create_portfolio(n_clicks,
             std = 'Standard dev.: 0.00'
 
         portfolio_table_output = procedure.gui_weights
+        #print('portfolio gui weights type:',type(portfolio_table_output) ,'\n', portfolio_table_output)
+        #here, share names for ISIN's must be added as new column to portfolio_table_output
         data = portfolio_table_output.to_dict('records')
         columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
 
         return name, s, r, std, data, columns
 
-
-        #TODO: optimizer input preparation
-#        ISIN_list = get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
-#                                             portfolio_asset_CAC40_input,
-#                                            portfolio_asset_FTSE100_input,
-#                                              portfolio_asset_IBEX35_input,
-#                                              portfolio_asset_HSI_input,
-#                                              portfolio_asset_SSE_input)
-#        optimize_objective = get_optimize_objective_char(portfolio_risk_input)
-#        period_start = portfolio_time_period_start_input.strftime('%Y-%m-%d')
-#        period_end = portfolio_time_period_end_input.strftime('%Y-%m-%d')
-#        broker_fix = int(portfolio_broker_fix_input)
-#        broker_var = int(portfolio_broker_var_input)
-#        split_shares = get_split_share_boolean(portfolio_asset_split_input)
-
-        #TODO: optimizer object creation
-#        request = op.optimizeRequest(portfolio_amount_input, ISIN_list)
-#        procedure = op.optimizeProcedure(request)
-
-        #TODO: optimizer object result retrieval
-#        portfolio_sharpe_ratio = procedure.optimize_result.sharpe_ratio
-#        portfolio_return = procedure.optimize_result.total_return
-#        portfolio_std = procedure.optimize_result.total_volatility
-#        portfolio_table_output = procedure.optimize_result.security_weights
-        # here, new column with names (from isins) must be concatenated to portfolio_table_output
-#        data = portfolio_table_output.to_dict('records')
-#        columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
-
-        #TODO: return outputs in order
-#        return name, portfolio_sharpe_ratio, portfolio_return, portfolio_std, data, columns
-
-
-### test request (create) tested on 20.12.2019 with MPSB
-# request = op.optimizeRequest(1000,['de000a1ewww0', 'de0008404005', 'de000basf111'])
-# procedure = op.optimizeProcedure(request)
-# s = procedure.optimize_result.sharpe_ratio
+    raise PreventUpdate
+    return
 
 
 ### Helper-Functions
@@ -896,37 +893,37 @@ def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
     if portfolio_asset_DAX30_input is not None:
         for x in portfolio_asset_DAX30_input:
             if x in df_DAX30.Name.values:
-                isin = df_DAX30[df_DAX30['Name'] == x]['ISIN'][0]
+                isin = df_DAX30.loc[df_DAX30['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_CAC40_input is not None:
         for x in portfolio_asset_CAC40_input:
             if x in df_CAC40.Name.values:
-                isin = df_CAC40[df_CAC40['Name'] == x]['ISIN'][0]
+                isin = df_CAC40.loc[df_CAC40['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_FTSE100_input is not None:
         for x in portfolio_asset_FTSE100_input:
             if x in df_FTSE100.Name.values:
-                isin = df_FTSE100[df_FTSE100['Name'] == x]['ISIN'][0]
+                isin = df_FTSE100.loc[df_FTSE100['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_IBEX35_input is not None:
         for x in portfolio_asset_IBEX35_input:
             if x in df_IBEX35.Name.values:
-                isin = df_IBEX35[df_IBEX35['Name'] == x]['ISIN'][0]
+                isin = df_IBEX35.loc[df_IBEX35['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_HSI_input is not None:
         for x in portfolio_asset_HSI_input:
             if x in df_HSI.Name.values:
-                isin = df_HSI[df_HSI['Name'] == x]['ISIN'][0]
+                isin = df_HSI.loc[df_HSI['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_SSE_input is not None:
         for x in portfolio_asset_SSE_input:
             if x in df_SSE.Name.values:
-                isin = df_SSE[df_SSE['Name'] == x]['ISIN'][0]
+                isin = df_SSE.loc[df_SSE['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     return isin_list
@@ -937,15 +934,15 @@ def get_asset_name_to_isin_list(security_weights):
 
 def get_optimize_objective_char(portfolio_risk_input):
     return {
-        '0' : 'v',
-        '1' : 'r',
-        '2' : 's'
+        0: 'v',
+        1: 'r',
+        2: 's'
     }[portfolio_risk_input]
 
 def get_split_share_boolean(portfolio_asset_split_input):
     return {
-        '0' : False,
-        '1' : True
+        0: False,
+        1: True
     }[portfolio_asset_split_input]
 
 ### Execute program
