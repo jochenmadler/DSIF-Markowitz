@@ -1,105 +1,102 @@
+# Version: 3.0
+
+# Workflow:
+# 1. OptimizeProcedure gets initialized with optimize_request(either optimizeRequest or optimizeRebalance)
+# 2. OptimizeProcedure obtains data and creates optimizeData
+# 3. OptimizeProcedure initializes optimizeResult
+
+from abc import ABC, abstractmethod
 import scipy.optimize as sco
 import numpy as np
 import SQLHandler as sh
 import ObjectiveFunction as of
+import pandas as pd
+import User as u
+import sys
 
-
-#provided by GUI user-input
-class optimizeRequest:
-    budget = None
-    ISIN_list = None
-    time_interval = None
-    period_start = None
-    broker_fix = None
-    broker_var = None
-    split_shares = None
-    optimize_objective = None
-
-    def __init__(self, budget, ISIN_list, optimize_objective = "s", time_interval = 'd' ,period_start = '2019-01-01',broker_fix = 0,broker_var = 0,split_shares = True):
-        self.budget = budget
-        self.ISIN_list = ISIN_list
-        self.optimize_objective = optimize_objective
-        self.time_interval = time_interval
-        self.period_start = period_start
-        self.broker_fix = broker_fix
-        self.broker_var = broker_var
-        self.split_shares = split_shares
-
-#generated from DataBase based on request parameters
 class optimizeData:
     data = None
     ISIN_list = None
     period_list = None
-    current_prices = None
+    #current_prices = None
+    return_df = None
 
     def __init__(self, data, time_interval = 'd'):
 
-        #ToDO:implement conversion to monthly data
+        #ToDO:implement conversion to monthly data (test)
         if time_interval == 'm':
-            pass
-        #data sanity check for NAs
+            data.index = pd.to_datetime(data.index)
+            data.resample('1M').max()
 
-        #ToDo:implement handling von NAs in data
-        if data.isnull().values.any():
-            pass
+        #ToDo:implement handling von NAs in data (zurückgestellt)
+        #if data.isnull().values.any():
+        #    assert("")
+
+        # UNCOMMENT FOR TESTING
+        #----------------------------------------------------------------------------
+        #data =  pd.read_excel("AUS_testData.xlsx", sheet_name = "Tabelle1")
+        #----------------------------------------------------------------------------
 
         self.data = data
         self.ISIN_list = data.columns
         self.period_list = data.index
-        self.current_prices = data.iloc[len(self.period_list) -1, ]
+        self.current_prices = data.iloc[len(self.period_list) - 1,]
 
-#generated based on Data and objective function
+        # convert adjPrice into returns in return_df
+        return_df = pd.DataFrame(index=self.period_list[1:], columns=self.ISIN_list, dtype=float)
+        for ct in range(1, len(self.period_list)):
+            for ct2 in range(0, len(self.ISIN_list)):
+                return_df.iloc[ct - 1, ct2] = (self.data.iloc[ct, ct2] / self.data.iloc[ct - 1, ct2]) - 1
+        self.return_df = return_df
+
+
 class optimizeResult:
+    #ToDo: check if need to be converted to spefic time period (example p.a.)
     sharpe_ratio = -10000
-    total_volatility = None
-    total_return = None
+    total_volatility = 100000
+    total_return = -10000
+
     transaction_cost = 0
     security_weights = None
+    current_capital = None
     dev_graph = None
+    gui_weights = None
 
-#comman center
-class optimizeProcedure:
+class optimizeProcedure():
     optimize_request = None
     optimize_data = None
     optimize_result = None
     obj_function = None
 
     def __init__(self, optimize_request):
+
         self.optimize_request = optimize_request
 
-        #generate optimize_data
-        self.optimize_data = optimizeData(sh.getACP(optimize_request.period_start, '2019-01-11', optimize_request.ISIN_list))
+        raw_data = sh.getACP(optimize_request.user.period_start, optimize_request.period_end, optimize_request.user.ISIN_list)
+        self.optimize_data = optimizeData(raw_data)
 
-        #ToDo: Decide for which KPI to optimize for
-        #define objective function to use
-        if((self.optimize_request.broker_fix == 0) & (self.optimize_request.broker_fix == 0)):
-            self.obj_function = of.objFunction_noTrans()
-        else:
-            self.obj_function = of.objFunction_basicTrans()
+        # add different objFunctions here
+        self.obj_function = of.objFunction_basicTrans()
 
         self.optimize_result = optimizeResult()
-
-        self.optimize()
-
-    #ToDo: check if there exists an implementation for whole shares
-    def wholeShareConstraint(self, x):
-        rest = 0
-        for ct in range(0, len(x)):
-            price = self.optimize_data.current_prices.iloc[ct]
-            rest = rest + abs((x[ct] * self.optimize_request.budget) % price)
-        return rest
 
 
     def optimize(self):
 
-        #ToDo: check if there exists an implementation for whole shares
-        if self.optimize_request.split_shares == False:
-            cons = ({'type': 'ineq', 'fun': lambda x: -(np.sum(x) - 1)},
-                    {'type': 'eq', 'fun': self.wholeShareConstraint})
-        else:
-            cons = {'type': 'ineq', 'fun': lambda x: -(np.sum(x) - 1)}
+        # initial request with equal start weights and transaction cost occurring for each purchase
+        if (isinstance(self.optimize_request, u.optimizeRequest)):
+            initial_weights = len(self.optimize_data.ISIN_list) * [1 / (len(self.optimize_data.ISIN_list)), ]
+            zerocost_weights = len(self.optimize_data.ISIN_list) * [0, ]
 
-        # Bounds: no short positions
+        # rebalance request with start weights from last procedure and cost ocurring for each rebalancing
+        else:
+            initial_weights = self.optimize_request.user.req_history[-1][1].security_weights.values[0]
+            zerocost_weights = initial_weights
+
+        # constraint: all money gets invested
+        cons = {'type': 'eq', 'fun': lambda x: -(np.sum(x) - 1)}
+
+        # bounds: no short positions
         bounds = tuple((0, 1) for x in range(len(self.optimize_data.ISIN_list)))
 
         # using minimize as sco does not offer maximize method
@@ -108,21 +105,30 @@ class optimizeProcedure:
             # minimize: negative objFunction
             fun = self.obj_function.function,
 
-            # initial solution: equal weights
-            x0=len(self.optimize_data.ISIN_list) * [1 / (len(self.optimize_data.ISIN_list)), ],
+            x0= initial_weights,
 
-            #
-            args = self,
-
+            args = (self, zerocost_weights),
 
             method='SLSQP',
+
             bounds=bounds,
+
             constraints=cons,
-
-            #TODO: check further solving methods
-
 
         )
 
+        # update current budget after optimizing
+        self.optimize_request.user.budget = self.optimize_request.user.budget * (self.optimize_result.total_return/100 + 1)
+        self.optimize_result.current_capital = self.optimize_request.user.budget
+
+    def generate_guioutput(self):
+        gui_weights = pd.DataFrame(columns=['percent_portfolio', 'amount_eur'], index = self.optimize_data.ISIN_list)
+        test = self.optimize_result.security_weights.values
+        gui_weights["percent_portfolio"] = self.optimize_result.security_weights.values[0]
+        gui_weights["amount_eur"] = self.optimize_result.security_weights.values[0]
+        gui_weights.loc[:, 'amount_eur'] *= self.optimize_request.user.budget
+        self.optimize_result.gui_weights = gui_weights
+
+        # ToDo: Implement the construction of the dev_graph
 
 
