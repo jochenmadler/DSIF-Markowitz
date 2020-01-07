@@ -116,8 +116,8 @@ def setUp(name):
     inTable()
     print("Fith import done of")
     print(directory)
-    #directory = directory6
-    #inTable()
+    directory = directory6
+    inTable()
     print("Sixth import done of")
     print(directory)
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
