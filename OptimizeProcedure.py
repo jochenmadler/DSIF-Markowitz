@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 import scipy.optimize as sco
 import numpy as np
-#import SQLHandler as sh
+import SQLHandler as sh
 import ObjectiveFunction as of
 import pandas as pd
 import User as u
