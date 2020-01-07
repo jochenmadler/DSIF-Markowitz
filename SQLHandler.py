@@ -1,13 +1,19 @@
-#find classes here: https://docs.python.org/2/tutorial/classes.html
+#*******************************************ANWEISUNGEN************************************************
+# Alles directories (1-6) für dich in der setUP funktion anpassen für das if statement mit deinem Namen-> hast du nicht alle files? -> schreib Alex
+# EINMALIG setUp("Dein Name") ausführen, mit deinem Namen als string
+# dann läuft alles von alleine
+# ACHTUNG!!! das setUp kann mit allen files bis zu 40 min dauern, nicht erschrecken, nicht abbrechen!
+# funktionen saveUser und getUser sind noch nicht fertig implementiert, getUser returned momentan nur einen Dummy!!
+# hast du daten kaputt gemacht? :/ führe einfach setUP noch einmal aus
+
 
 import pandas as pd
 from sqlalchemy import create_engine, MetaData
 import sqlalchemy
 import psycopg2
-import time
-from datetime import datetime
-
 import User as us
+
+
 name = "Alex"
 database = "dsif"
 user = "boys"
@@ -71,7 +77,10 @@ def setUp(name):
         port = "5432"
         directory = "C:\\Users\mpere\Documents\Python Scripts\DSIF-Markowitz/DAX.txt"
         directory2 = "" # insert something here
-        directory3 = ""  # insert directory 3 here
+        directory3 = ""
+        directory4 = ""
+        directory5 = ""
+        directory6 = ""
         codeRegister = "companies"
     elif name == "Alex":
         database = "dsif"
@@ -82,6 +91,9 @@ def setUp(name):
         directory = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/DAX.txt'
         directory2 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/CAC40.txt"
         directory3 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/FTSE100.txt"
+        directory4 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/IBEX35.txt"
+        directory5 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/SSE.txt"
+        directory6 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/HSI.txt"
         codeRegister = 'companies'
 
     clean()
@@ -104,8 +116,8 @@ def setUp(name):
     inTable()
     print("Fith import done of")
     print(directory)
-    directory = directory6
-    inTable()
+    #directory = directory6
+    #inTable()
     print("Sixth import done of")
     print(directory)
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
@@ -225,7 +237,7 @@ def getACP (startDate, endDate, comps):
 def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
     start()
     # columnstoReturn must be list in ,columnToSearch and  assetClass and searchterm a strings
-    searchterm = searchterm.upper()
+    #searchterm = searchterm.upper()
     #create connection
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -292,9 +304,9 @@ def saveUser(newUser):
     #relation requestResult speichern
 
 
-def getResult (name):
+def getUser (name):
     start()
-    return #hier kommt ein result rein
+    return us.User("testID", 10000,['de000a1ewww0', 'de0008404005', 'de000basf111','de000a1ewww4'], optimize_objective="s", broker_fix=0)
 
 def clean():
     start()
@@ -344,14 +356,4 @@ def clean():
     con.commit()
     cur.close()
 
-# main
-#clean()
-#setUp("Alex")
-#comps = ['DE000a1EWWW0', 'de0008404005', 'ie00bz12wp82', 'de0007100000']
-#print(getACP('2019-01-01', '2019-02-28', comps))
-#u = us.User('123', 10000, ['DE000a1EWWW0', 'de0008404005', 'ie00bz12wp82', 'de0007100000'])
-#clean()
-#setUp("Alex")
-#u = us.User("testID", 10000,['de000a1ewww0', 'de0008404005', 'de000basf111','de000a1ewww4'], optimize_objective="s", broker_fix=0)
-#saveUser(u)
-#exit (0)
+
