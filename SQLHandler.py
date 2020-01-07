@@ -4,9 +4,11 @@ import pandas as pd
 from sqlalchemy import create_engine, MetaData
 import sqlalchemy
 import psycopg2
+import time
+from datetime import datetime
 
 import User as us
-
+name = "Alex"
 database = "dsif"
 user = "boys"
 password = "zaubermaus"
@@ -14,15 +16,16 @@ host = "localhost"
 port = "1997"
 directory = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/DAX.txt'
 directory2 = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/CAC40.txt'
+directory3 = ""
+directory4 = ""
+directory5 = ""
+directory6 = ""
 codeRegister = 'companies'
 tableName = "acp"
 counter = 0
 
-
-def setUp(name):
+def start ():
     global database, host, user, password, port, directory, directory2, directory3, codeRegister
-    #remove all old relations first to avoid duplicates
-    clean()
 
     if name == "Jochen":
         database = "postgres"
@@ -30,10 +33,33 @@ def setUp(name):
         password = "Apfel@Data@1996"
         host = "localhost"
         port = "5432"
+    elif name == "Marcel":
+        database = "postgres"
+        user = "postgres"
+        password = "zaubermaus"
+        host = "localhost"
+        port = "5432"
+        directory = "C:\\Users\mpere\Documents\Python Scripts\DSIF-Markowitz/DAX.txt"
+    elif name == "Alex":
+        database = "dsif"
+        user = "boys"
+        password = "zaubermaus"
+        host = "localhost"
+        port = "1997"
+def setUp(name):
+
+    global database, host, user, password, port, directory, directory2, directory3, codeRegister
+    #remove all old relations first to avoid duplicates
+    if name == "Jochen":
+        database = "postgres"
+        user = "postgres"
+        password = "Apfel@Data@1996"
+        host = "localhost"
+        port = "5432"
         directory = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\DAX.txt"
-        directory2 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\CAC40.txt"  # insert something here
+        directory2 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\CAC40.txt"
         directory3 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\FTSE100.txt"
-        directory4 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\HSI.txt"# insert directory 3 here
+        directory4 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\HSI.txt"
         directory5 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\IBEX35.txt"
         directory6 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\SSE.txt"
         codeRegister = "companies"
@@ -57,17 +83,31 @@ def setUp(name):
         directory2 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/CAC40.txt"
         directory3 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/FTSE100.txt"
         codeRegister = 'companies'
+
+    clean()
     inTable()
+    print("First import done of")
+    print(directory)
     directory = directory2
     inTable()
+    print("Second import done of")
+    print(directory)
     directory = directory3
     inTable()
+    print("Third import done of")
+    print(directory)
     directory = directory4
     inTable()
+    print("Fourth import done of")
+    print(directory)
     directory = directory5
     inTable()
+    print("Fith import done of")
+    print(directory)
     directory = directory6
     inTable()
+    print("Sixth import done of")
+    print(directory)
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
 
@@ -111,6 +151,7 @@ def setUp(name):
 
 def inTable():
     # create a connection
+    start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
 
     # read in the future codeNames relation
@@ -152,6 +193,7 @@ def inTable():
     return
 
 def getACP (startDate, endDate, comps):
+    start()
     #create connection
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -181,6 +223,7 @@ def getACP (startDate, endDate, comps):
     return result
 
 def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
+    start()
     # columnstoReturn must be list in ,columnToSearch and  assetClass and searchterm a strings
     searchterm = searchterm.upper()
     #create connection
@@ -207,6 +250,7 @@ def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
     return result
 
 def saveRequest (optimizeRequest, counter):
+    start()
     #list mit procedures
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -222,6 +266,7 @@ def saveRequest (optimizeRequest, counter):
     cur.close()
 
 def saveUser(newUser):
+    start()
     global counter
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -248,10 +293,11 @@ def saveUser(newUser):
 
 
 def getResult (name):
-
+    start()
     return #hier kommt ein result rein
 
 def clean():
+    start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
     command = '''
