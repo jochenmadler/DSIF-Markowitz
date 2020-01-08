@@ -1,30 +1,35 @@
-# Version 1.0.3
+# Version 1.0.4
+import json
 import dash
 import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
+
 from datetime import datetime as dt
 import pandas as pd
+import plotly.graph_objects as go
 
 # import function to call data from Alex' SQLHandler
-from SQLHandler import findComp
+import SQLHandler as sql_handler
+# Only execute once: sql_handler.setUp('Jochen')
+
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
 
 # preload all stock data (from local PostgreSQL) into df's: [0: Name, 1: ISIN, 2: Index]
-df_DAX30 = findComp('DAX30', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_DAX30 = sql_handler.findComp('DAX30', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_DAX30.columns = ['Name', 'ISIN', 'Index']
-df_CAC40 = findComp('CAC40', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_CAC40 = sql_handler.findComp('CAC40', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_CAC40.columns = ['Name', 'ISIN', 'Index']
-df_FTSE100 = findComp('FTSE100', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_FTSE100 = sql_handler.findComp('FTSE100', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_FTSE100.columns = ['Name', 'ISIN', 'Index']
-df_HSI = findComp('HangSengIndex', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_HSI = sql_handler.findComp('HangSengIndex', 'Index', ['Name', 'ISIN', 'Index'], 'companies') #alles in CAPS bald
 df_HSI.columns = ['Name', 'ISIN', 'Index']
-df_IBEX35 = findComp('IBEX35', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_IBEX35 = sql_handler.findComp('IBEX35', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_IBEX35.columns = ['Name', 'ISIN', 'Index']
-df_SSE = findComp('SSE', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_SSE = sql_handler.findComp('SSE', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_SSE.columns = ['Name', 'ISIN', 'Index']
 
 # set up options for asset mix - cut df's and create dictionary for all options
@@ -69,8 +74,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 # server = app.server - may be implemented at a later stage
 
-
-# set up app layout (the actual GUI displayed)
+#set up initial layout to be displayed
 app.layout = html.Div([
 
     ###HEADER###
@@ -102,7 +106,7 @@ app.layout = html.Div([
         html.Div([
             html.Div([
                 dcc.Markdown('''
-                **Portfolio Name:**
+                **User name:**
                 ''')
             ], style={
                 'width': '30%',
@@ -114,7 +118,7 @@ app.layout = html.Div([
             html.Div([
                 dcc.Input(id='portfolio_name_input',
                           type='text',
-                          placeholder='My World Portfolio',
+                          placeholder='Max Mustermann',
                           )
             ], style={
                 'width': '50%',
@@ -509,6 +513,7 @@ app.layout = html.Div([
                     'verticalAlign': 'middle'
                 }),
                 html.Div([
+                    #7.1: 'portfolio_time_period_start_input'
                     dcc.DatePickerSingle(
                         id='portfolio_time_period_start_input',
                         date=dt(1990, 1, 1),
@@ -531,7 +536,6 @@ app.layout = html.Div([
 
             html.Div([
                 html.Div([
-                    #left
                     dcc.Markdown('''
                         End Date:
                         ''')
@@ -542,6 +546,7 @@ app.layout = html.Div([
                     'verticalAlign': 'middle'
                 }),
                 html.Div([
+                    #7.2: 'portfolio_time_period_end_input'
                     dcc.DatePickerSingle(
                         id='portfolio_time_period_end_input',
                         date=dt(2018, 9, 1),
@@ -568,20 +573,146 @@ app.layout = html.Div([
             'verticalAlign': 'middle'
         }),
 
+        html.Div([
+            html.Div([
+                #markdown
+                dcc.Markdown('''
+                **Time Interval:**
+                ''')
+            ], style={
+                    'width': '50%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }),
+
+            html.Div([
+                ##INPUT 7.3: 'portfolio_time_period_interval_input'
+                dcc.Slider(id='portfolio_time_period_interval_input',
+                           min=0,
+                           max=1,
+                           marks={
+                               0: 'Monthly',
+                               1: 'Daily',
+                           },
+                           value=0)
+            ], style={
+                    'width': '50%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                })
+
+        ], style={
+            'width': '100%',
+            'display': 'table',
+            'verticalAlign': 'middle',
+            'marginTop': '25px'
+        }),
+
         html.Hr(style={
             'width': '99%',
             'display': 'inline-block'
         }),
 
-        ##INPUT 8: 'portfolio_creation_button_input'
+
         html.Div([
-            html.Button(id='portfolio_creation_button_input',
-                        children='Create Portfolio')
+
+            ##INPUT 8: 'portfolio_creation_button_input'
+            html.Div([
+                html.Button(
+                    id='portfolio_creation_button_input',
+                    children='Create Portfolio',
+                )
+            ], style={
+                'width': '50%',
+                'float': 'left',
+                'display': 'table-cell',
+                'verticalAlign': 'middle'
+            }),
+
+            ##INPUT 9: 'portfolio_loading_button_input'
+            html.Div([
+                html.Button(
+                    id='portfolio_loading_button_input',
+                    children='Load My Portfolio',
+                )
+            ], style={
+                'width': '50%',
+                'float': 'right',
+                'display': 'table-cell',
+                'verticalAlign': 'middle'
+            })
         ], style={
+            'width': '99%',
+            'display': 'table',
             'verticalAlign': 'middle'
-        })
+        }),
 
+        html.Hr(style={
+            'width': '99%',
+            'display': 'inline-block'
+        }),
 
+        html.Div(
+            ##OUTPUT 7: 'portfolio_rebalance_popup_container': hidden by default
+            id='portfolio_rebalance_popup_container',
+            style={
+                'display': 'none' #will be set to 'block' (activated) in callback
+            },
+            children=[
+                html.Div([
+                    dcc.Markdown(
+                        '''
+                        **Portfolio Rebalancing:**
+                        ''')
+                ]),
+                html.Div([
+                    html.Div([
+                        dcc.Markdown(
+                            '''
+                New End Date:
+                ''')
+                    ], style={
+                        'width': '50%',
+                        'float': 'left',
+                        'display': 'table-cell',
+                        'verticalAlign': 'middle'
+                    }),
+
+                    html.Div([
+                        ##INPUT 10: 'portfolio_rebalance_end_date_input'
+                        dcc.DatePickerSingle(
+                            id='portfolio_rebalance_end_date_input',
+                            date=dt(2018, 9, 1),
+                            min_date_allowed=dt(1991, 1, 1),
+                            max_date_allowed=dt(2019, 9, 1),
+                            display_format='DD/MM/YYYY',
+                            with_portal=True,
+                        )
+                    ], style={
+                        'width': '50%',
+                        'float': 'right',
+                        'display': 'table-cell',
+                        'verticalAlign': 'middle'
+                    })
+                ], style={
+                    'width': '100%',
+                    'display': 'table',
+                    'verticalAlign': 'middle'
+                }),
+                html.Div([
+                    ##INPUT 11: 'portfolio_rebalance_button_input'
+                    html.Button(
+                        id='portfolio_rebalance_button_input',
+                        children='Rebalance Portfolio',
+                    )
+                ], style={
+                    'float': 'left',
+                    'verticalAlign': 'middle',
+                    'marginTop': '20px'
+                })
+            ])
     ], style={
         'borderBottom': 'thin lightgrey solid',
         'backgroundColor': '#fafafa',
@@ -652,9 +783,9 @@ app.layout = html.Div([
             'display': 'inline-block'
         }),
 
-        ##OUTPUT 5: 'portfolio_pie_chart_output'
+        ##OUTPUT 5: 'portfolio_graph_output'
         html.Div([
-            dcc.Graph(id='portfolio_pie_chart_output')
+            dcc.Graph(id='portfolio_graph_output')
         ]),
 
         html.Hr(style={
@@ -664,7 +795,18 @@ app.layout = html.Div([
 
         ##OUTPUT 6: 'portfolio_table_output'
         html.Div([
-            dash_table.DataTable(id='portfolio_table_output')
+            dash_table.DataTable(
+                id='portfolio_table_output',
+                style_as_list_view=True,
+                style_header={
+                    'backgroundColor': '#f4f4f4',
+                    'fontWeight': 'bold'
+                },
+                style_cell={'textAlign': 'left',
+                            'padding': '5px',
+                            'fontSize':14,
+                            'font-family': 'sans-serif'}
+            )
         ])
 
     ], style={
@@ -680,11 +822,10 @@ app.layout = html.Div([
 
 
 # set up GUI interactivity (callbacks)
-
 #INPUTS:
-#1: 'portfolio_name_input'
-#2: 'portfolio_amount_input'
-#3: 'portfolio_risk_input'
+#1:     'portfolio_name_input'
+#2:     'portfolio_amount_input'
+#3:     'portfolio_risk_input'
 #4.1.1: 'portfolio_asset_DAX30_activate'
 #4.1.2: 'portfolio_asset_DAX30_input'
 #4.2.1: 'portfolio_asset_CAC40_activate'
@@ -697,20 +838,25 @@ app.layout = html.Div([
 #4.5.2: 'portfolio_asset_HSI_input'
 #4.6.1: 'portfolio_asset_SSE_activate'
 #4.6.2: 'portfolio_asset_SSE_input'
-#5.1: 'portfolio_broker_fix_input'
-#5.2: 'portfolio_broker_var_input'
-#6: 'portfolio_asset_split_input'
-#7.1: 'portfolio_time_period_start_input'
-#7.2: 'portfolio_time_period_end_input'
-#8: 'portfolio_creation_button_input'
+#5.1:   'portfolio_broker_fix_input'
+#5.2:   'portfolio_broker_var_input'
+#6:     'portfolio_asset_split_input'
+#7.1:   'portfolio_time_period_start_input'
+#7.2:   'portfolio_time_period_end_input'
+#7.3:   'portfolio_time_period_interval_input'
+#8:     'portfolio_creation_button_input'
+#9:     'portfolio_loading_button_input'
+#10:    'portfolio_rebalance_end_date_input'
+#11:    'portfolio_rebalance_button_input'
 
 #OUTPUTS:
-#1: 'portfolio_name_output'
-#2: 'portfolio_sharpe_ratio_output'
-#4: 'portfolio_return_output'
-#3: 'portfolio_std_output'
-#5: 'portfolio_pie_chart_output'
-#6: 'portfolio_table_output'
+#1:     'portfolio_name_output'
+#2:     'portfolio_sharpe_ratio_output'
+#4:     'portfolio_return_output'
+#3:     'portfolio_std_output'
+#5:     'portfolio_graph_output'
+#6:     'portfolio_table_output'
+#7:     'portfolio_rebalance_popup_container'
 
 
 # activate DAX30 Dropdown menu when DAX30 Checklist is ticked
@@ -775,14 +921,19 @@ def set_SSE_Dropdown(value_SSE):
         return [{'label': '', 'value': ''}]
 # select all options in SSE when SSE Checklist is ticked - #TODO
 
-###DEF 1: create_portfolio
+###DEF 1: create_load_rebalance_portfolio
 @app.callback([Output('portfolio_name_output', 'children'),
                Output('portfolio_sharpe_ratio_output', 'children'),
                Output('portfolio_return_output', 'children'),
                Output('portfolio_std_output', 'children'),
                Output('portfolio_table_output', 'data'),
-               Output('portfolio_table_output', 'columns')],
-              [Input('portfolio_creation_button_input', 'n_clicks')],
+               Output('portfolio_table_output', 'columns'),
+               Output('portfolio_rebalance_popup_container', 'style'),
+               #Output('portfolio_graph_output', 'figure')
+               ],
+              [Input('portfolio_creation_button_input', 'n_clicks'),
+               Input('portfolio_loading_button_input', 'n_clicks'),
+               Input('portfolio_rebalance_button_input', 'n_clicks')],
               [State('portfolio_name_input', 'value'),
                State('portfolio_amount_input', 'value'),
                State('portfolio_risk_input', 'value'),
@@ -796,86 +947,144 @@ def set_SSE_Dropdown(value_SSE):
                State('portfolio_broker_var_input', 'value'),
                State('portfolio_asset_split_input', 'value'),
                State('portfolio_time_period_start_input', 'date'),
-               State('portfolio_time_period_end_input', 'date')])
-def create_portfolio(n_clicks,
-                     portfolio_name_input,
-                     portfolio_amount_input,
-                     portfolio_risk_input,
-                     portfolio_asset_DAX30_input,
-                     portfolio_asset_CAC40_input,
-                     portfolio_asset_FTSE100_input,
-                     portfolio_asset_IBEX35_input,
-                     portfolio_asset_HSI_input,
-                     portfolio_asset_SSE_input,
-                     portfolio_broker_fix_input,
-                     portfolio_broker_var_input,
-                     portfolio_asset_split_input,
-                     portfolio_time_period_start_input,
-                     portfolio_time_period_end_input):
-    if n_clicks is None:
+               State('portfolio_time_period_end_input', 'date'),
+               State('portfolio_time_period_interval_input', 'value'),
+               State('portfolio_rebalance_end_date_input', 'date')])
+def create_load_rebalance_portfolio(n_clicks_create,
+                                    n_clicks_load,
+                                    n_clicks_rebalance,
+                                    portfolio_name_input,
+                                    portfolio_amount_input,
+                                    portfolio_risk_input,
+                                    portfolio_asset_DAX30_input,
+                                    portfolio_asset_CAC40_input,
+                                    portfolio_asset_FTSE100_input,
+                                    portfolio_asset_IBEX35_input,
+                                    portfolio_asset_HSI_input,
+                                    portfolio_asset_SSE_input,
+                                    portfolio_broker_fix_input,
+                                    portfolio_broker_var_input,
+                                    portfolio_asset_split_input,
+                                    portfolio_time_period_start_input,
+                                    portfolio_time_period_end_input,
+                                    portfolio_time_period_interval_input,
+                                    portfolio_time_period_rebalance_input):
+
+    ctx = dash.callback_context
+    ctx_msg = json.dumps({
+        #'states': ctx.states,
+        'inputs': ctx.inputs,
+        'triggered': ctx.triggered
+    }, indent=2)
+
+    if not ctx.triggered:
         raise PreventUpdate
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if portfolio_name_input is not None and portfolio_amount_input is not None:
-        name = update_portfolio_name(portfolio_name_input)
+    #create new portfolio
+    if button_id == 'portfolio_creation_button_input':
+        if portfolio_name_input is None or portfolio_amount_input is None:
+            raise PreventUpdate
 
-        #optimizer input preparation
+        #prepare input for optimization procedure
         ISIN_list = get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
                                                 portfolio_asset_CAC40_input,
                                                 portfolio_asset_FTSE100_input,
                                                 portfolio_asset_IBEX35_input,
                                                 portfolio_asset_HSI_input,
                                                 portfolio_asset_SSE_input)
+
+        #if ISIN_list is empty, stop portfolio optimization procedure
+        if not ISIN_list:
+            raise PreventUpdate
+
         optimize_objective = get_optimize_objective_char(portfolio_risk_input)
-        #start and end dates as string - cutoff timestamps
-        period_start = portfolio_time_period_start_input[:-9]
-        period_end = portfolio_time_period_end_input[:-9]
+        #start and end dates as string - cutoff timestamps (if not manually entered)
+        if len(portfolio_time_period_start_input) > 10:
+            period_start = portfolio_time_period_start_input[:-9]
+        else:
+            period_start = portfolio_time_period_start_input
+        if len(portfolio_time_period_end_input) > 10:
+            period_end = portfolio_time_period_end_input[:-9]
+        else:
+            period_end = portfolio_time_period_end_input
+        time_interval = get_time_interval_char(portfolio_time_period_interval_input)
         if portfolio_broker_fix_input is not None:
             broker_fix = float(portfolio_broker_fix_input)
+        else:
+            broker_fix = 0
         if portfolio_broker_var_input is not None:
             broker_var = int(portfolio_broker_var_input)
+        else:
+            broker_var = 0
         split_shares = get_split_share_boolean(portfolio_asset_split_input)
 
-        print('Selected ISIN_list:', ISIN_list)
+        #create user to be optimized
+        user = u.User(portfolio_name_input,
+                      portfolio_amount_input,
+                      ISIN_list,
+                      time_interval=time_interval,
+                      optimize_objective=optimize_objective,
+                      period_start=period_start,
+                      broker_fix=broker_fix,
+                      broker_var=broker_var,
+                      split_shares=split_shares)
 
-        #optimizer object creation
-        user = u.User(name, portfolio_amount_input, ISIN_list)
-        #user = u.User(name, portfolio_amount_input, ISIN_list,                                 | done
-        #              optimize_objective=optimize_objective, period_start=period_start,        | tbd MP
-        #              broker_fix=broker_fix, broker_var=broker_var,split_shares=split_shares)  | tbd MP
+        #start optimization procedure
+        user.optimize_req(period_end=period_end)
 
-        user.optimize_req()
-        procedure = user.req_history[-1][1]
+        #save user to local SQL database
+        #sql_handler.saveUser(user)
 
-        #Hardcoded with Marcl am 05.01.2020
-        #user = u.User('Testname', 10000, ['de000a1ewww0', 'de0008404005', 'de000basf111'], broker_var=2)
-        #user.optimize_req()
-        #print("JETZT WIRD GEREBALANCED")
-        #user.rebalance_req()
-        #procedure = user.req_history[-1][1]
+        #retrieve & unpack results: #1 displayable output and #2 rebalancing layout
+        portfolio_result = get_portfolio_result(user)
+        name_children = portfolio_result[0]
+        sharpe_children = portfolio_result[1]
+        return_children = portfolio_result[2]
+        std_children = portfolio_result[3]
+        table_data = portfolio_result[4]
+        table_columns = portfolio_result[5]
+        #graph_figure = portfolio_result[6]
+        portfolio_rebalance_popup = {'display': 'block'}
 
-        if procedure.sharpe_ratio:
-            s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
-        else:
-            s = 'Sharpe ratio: 0.00'
-        if procedure.total_return:
-            r = 'Total return: {:.2f}'.format(procedure.total_return)
-        else:
-            r = 'Total return: 0.00'
-        if procedure.total_volatility:
-            std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
-        else:
-            std = 'Standard dev.: 0.00'
+        return name_children, \
+               sharpe_children, \
+               return_children, \
+               std_children, \
+               table_data, \
+               table_columns, \
+               portfolio_rebalance_popup #, graph_figure
 
-        portfolio_table_output = procedure.gui_weights
-        #print('portfolio gui weights type:',type(portfolio_table_output) ,'\n', portfolio_table_output)
-        #here, share names for ISIN's must be added as new column to portfolio_table_output
-        data = portfolio_table_output.to_dict('records')
-        columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
+    #load user and portfolio
+    elif button_id == 'portfolio_loading_button_input' and n_clicks_load is not None:
+        if portfolio_name_input is None:
+            raise PreventUpdate
 
-        return name, s, r, std, data, columns
+        # get user from SQL data base
+        # user = sql_handler.getUser(user)
+        # retrieve results as displayable output and display re-balancing option
+        # result = get_portfolio_result(user)
+        # portfolio_rebalance_popup = {'display': 'block'}
+        ##RETURN Statement missing: Error message
+        raise PreventUpdate
 
+    elif button_id == 'portfolio_rebalance_button_input' and n_clicks_rebalance is not None:
+        if portfolio_name_input is None:
+            raise PreventUpdate
+
+        # get user from SQL data base
+        # user = sql_handler.getUser(user)
+        # period_end = portfolio_time_period_end_input[:-9]
+        # user.optimize_req(period_end)
+        # retrieve results as displayable output and display re-balancing option
+        # result = get_portfolio_result(user)
+        # portfolio_rebalance_popup = {'display': 'block'}
+        ##RETURN Statement missing: Error message
+        raise PreventUpdate
+
+    #initial state: no button pressed
     raise PreventUpdate
-    return
 
 
 ### Helper-Functions
@@ -928,9 +1137,31 @@ def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
 
     return isin_list
 
-def get_asset_name_to_isin_list(security_weights):
-    #converts isin to name
-    return
+def get_asset_name_to_isin_list(isin):
+    name = 'NULL'
+    if isin is not None:
+
+       if isin in df_DAX30.ISIN.values:
+           name = df_DAX30.loc[df_DAX30['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_CAC40.ISIN.values:
+           name = df_CAC40.loc[df_CAC40['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_FTSE100.ISIN.values:
+           name = df_FTSE100.loc[df_FTSE100['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_IBEX35.ISIN.values:
+           name = df_IBEX35.loc[df_IBEX35['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_HSI.ISIN.values:
+           name = df_HSI.loc[df_HSI['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_SSE.ISIN.values:
+           name = df_SSE.loc[df_SSE['ISIN'] == isin].iloc[0]['Name']
+
+       return name
+
+    return name
 
 def get_optimize_objective_char(portfolio_risk_input):
     return {
@@ -944,6 +1175,72 @@ def get_split_share_boolean(portfolio_asset_split_input):
         0: False,
         1: True
     }[portfolio_asset_split_input]
+
+def get_time_interval_char(portfolio_time_period_interval_input):
+    return {
+        0: 'm',
+        1: 'd'
+    }[portfolio_time_period_interval_input]
+
+#def construct_graph(user):
+    #Get time_period Now (23.11.2019) - start_date (maybe convert to datetime?)
+    #x_values, y_values = []
+
+    #For i in time_period (each day i):
+        #y=0
+        #For j in gui_weight (ISIN list):
+            #j_acp = getACP(i, j)
+            #j-1_acp = getACP(i, j-1)
+            #if j_acp or j-1_acp is None:
+                #continue i (skip day i, do not append x or y)
+            #j_return = (j_acp - j-1_acp) / j-1_acp
+            #y += j_return * gui_weights.loc[gui_weights['ISIN'] == j].iloc[0]['percent_portfolio']
+        #y_values.append(y)
+        #x_values.append(i)
+
+    #figure = go.Figure(
+        #data = go.Scatter(
+            #x = x_values,
+            #y = y_values,
+            #hoverinfo = 'x'
+        #),
+        #layout = go.Layout(
+        #    title = 'Portfolio Performance'
+        #)
+    #)
+    #return figure
+
+def get_portfolio_result(user):
+    procedure = user.req_history[-1][1]
+
+    s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
+    r = 'Total return: {:.2f}'.format(procedure.total_return)
+    std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
+
+    portfolio_table_output = procedure.gui_weights
+    portfolio_table_output['percent_portfolio'] = portfolio_table_output['percent_portfolio'].apply(lambda x:x*100)
+    portfolio_table_output['percent_portfolio'] = portfolio_table_output['percent_portfolio'].apply(lambda x:round(x,2))
+    portfolio_table_output['amount_eur'] = portfolio_table_output['amount_eur'].apply(lambda x: round(x, 2))
+
+    #add share name and ISIN columns and rename them properly
+    names = []
+    for i, row in procedure.gui_weights.iterrows():
+        name = get_asset_name_to_isin_list(i)
+        names.append(name)
+    portfolio_table_output['Name'] = names
+    portfolio_table_output['ISIN'] = portfolio_table_output.index
+    portfolio_table_output = portfolio_table_output[['Name', 'ISIN', 'percent_portfolio', 'amount_eur']]
+    portfolio_table_output.columns = ['Name', 'ISIN', 'Weight [%]', 'Amount [EUR]']
+    #portfolio_table_output.append({'Name': [None], 'ISIN': [None], 'Amount [EUR]': - last (sum) row tbd
+
+    #construct scatterplot with historic portfolio return
+    #figure = construct_graph(user)
+
+    #construct table with weights
+    data = portfolio_table_output.to_dict('records')
+    columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
+
+    return user.id, s, r, std, data, columns#, figure
 
 ### Execute program
 if __name__ == '__main__':
