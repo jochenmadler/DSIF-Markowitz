@@ -1,4 +1,4 @@
-# Version: 3.0
+# Version: 3.1
 
 # Workflow
 # 1. User gets initialized with User(id, budget, ISIN_list, etc. )
