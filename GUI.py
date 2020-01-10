@@ -1,4 +1,4 @@
-# Version 1.0.4
+# Version 1.0.5
 import json
 import dash
 import dash_table
@@ -929,8 +929,7 @@ def set_SSE_Dropdown(value_SSE):
                Output('portfolio_table_output', 'data'),
                Output('portfolio_table_output', 'columns'),
                Output('portfolio_rebalance_popup_container', 'style'),
-               #Output('portfolio_graph_output', 'figure')
-               ],
+               Output('portfolio_graph_output', 'figure')],
               [Input('portfolio_creation_button_input', 'n_clicks'),
                Input('portfolio_loading_button_input', 'n_clicks'),
                Input('portfolio_rebalance_button_input', 'n_clicks')],
@@ -1045,7 +1044,7 @@ def create_load_rebalance_portfolio(n_clicks_create,
         std_children = portfolio_result[3]
         table_data = portfolio_result[4]
         table_columns = portfolio_result[5]
-        #graph_figure = portfolio_result[6]
+        graph_figure = portfolio_result[6]
         portfolio_rebalance_popup = {'display': 'block'}
 
         return name_children, \
@@ -1054,7 +1053,8 @@ def create_load_rebalance_portfolio(n_clicks_create,
                std_children, \
                table_data, \
                table_columns, \
-               portfolio_rebalance_popup #, graph_figure
+               portfolio_rebalance_popup,\
+               graph_figure
 
     #load user and portfolio
     elif button_id == 'portfolio_loading_button_input' and n_clicks_load is not None:
@@ -1182,33 +1182,76 @@ def get_time_interval_char(portfolio_time_period_interval_input):
         1: 'd'
     }[portfolio_time_period_interval_input]
 
-#def construct_graph(user):
-    #Get time_period Now (23.11.2019) - start_date (maybe convert to datetime?)
-    #x_values, y_values = []
+def construct_graph(user):
+    #obtain gui_weights (percentage) and get_acp (returns). Then calculate daily (weighted) portfolio return
+    procedure = user.req_history[-1][1]
+    df_weights = procedure.gui_weights.copy()
+    request = user.req_history[-1][0]
+    comps = []
+    for i, row in procedure.gui_weights.iterrows():
+        comps.append(i)
+    df_acp = sql_handler.getACP(user.period_start, '2019-11-22', comps)
+    df_acp.insert(0, 'date', df_acp.index)
+    df_acp.reset_index(inplace = True, drop = True)
 
-    #For i in time_period (each day i):
-        #y=0
-        #For j in gui_weight (ISIN list):
-            #j_acp = getACP(i, j)
-            #j-1_acp = getACP(i, j-1)
-            #if j_acp or j-1_acp is None:
-                #continue i (skip day i, do not append x or y)
-            #j_return = (j_acp - j-1_acp) / j-1_acp
-            #y += j_return * gui_weights.loc[gui_weights['ISIN'] == j].iloc[0]['percent_portfolio']
-        #y_values.append(y)
-        #x_values.append(i)
+    #obtain cumulated portfolio return for each date in get_acp
+    x_values = []
+    y_values = []
+    print('MESSAGE: Graph is being constructed...')
+    for i, row in df_acp.iloc[1:].iterrows():
+        if i == 0 or row.isnull().any():
+            continue
+        ret_values = []
+        for col in df_acp.columns[1:]:
+            ret = (df_acp.iloc[i][col] - df_acp.iloc[i - 1][col]) / df_acp.iloc[i - 1][col]
+            ret_values.append(ret)
+        ctr = 0
+        y = 0
+        for k in ret_values:
+            percent = df_weights.iloc[ctr][0]
+            y += k * percent
+            ctr += 1
+        if not y_values or pd.isna(y_values[-1]): #first y_value cannot be cumulated or last NaN value should not be added up
+            y_values.append(y)
+        else: #y_value is current plus last value
+            y_values.append(y_values[-1] + y)
+        x_values.append(df_acp.iloc[i][0])
 
-    #figure = go.Figure(
-        #data = go.Scatter(
-            #x = x_values,
-            #y = y_values,
-            #hoverinfo = 'x'
-        #),
-        #layout = go.Layout(
-        #    title = 'Portfolio Performance'
-        #)
-    #)
-    #return figure
+    #df_graph = pd.DataFrame({'date': x_values, 'portfolio return': y_values})
+    #print(df_graph)
+
+    #construct scatterplot with x_values (time) and y_values (portfolio return)
+    figure = go.Figure(
+        data = go.Scatter(
+            x = x_values,
+            y = y_values,
+            hoverinfo = 'x,y'
+        ),
+        layout = go.Layout(
+            title = 'Cumulated Portfolio Return [%]',
+            plot_bgcolor = '#ffffff',   #f4f4f4 (light grey)
+            paper_bgcolor = '#ffffff',   #f4f4f4 (light grey)
+            xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
+            yaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
+            shapes = [
+                dict(
+                    type = 'rect',
+                    xref = 'x',
+                    yref = 'paper',
+                    x0 = request.period_end,
+                    y0 = 0,
+                    x1 = '2019-11-22',
+                    y1 = 1,
+                    fillcolor = '#fafafa',
+                    opacity = 0.8,
+                    layer = 'below',
+                    line_width = 0
+                     )
+            ]
+        )
+    )
+
+    return figure
 
 def get_portfolio_result(user):
     procedure = user.req_history[-1][1]
@@ -1217,12 +1260,11 @@ def get_portfolio_result(user):
     r = 'Total return: {:.2f}'.format(procedure.total_return)
     std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
 
-    portfolio_table_output = procedure.gui_weights
+    #modify copy of gui_weights: round results, add share name and ISIN column and rename columns properly
+    portfolio_table_output = procedure.gui_weights.copy()
     portfolio_table_output['percent_portfolio'] = portfolio_table_output['percent_portfolio'].apply(lambda x:x*100)
     portfolio_table_output['percent_portfolio'] = portfolio_table_output['percent_portfolio'].apply(lambda x:round(x,2))
     portfolio_table_output['amount_eur'] = portfolio_table_output['amount_eur'].apply(lambda x: round(x, 2))
-
-    #add share name and ISIN columns and rename them properly
     names = []
     for i, row in procedure.gui_weights.iterrows():
         name = get_asset_name_to_isin_list(i)
@@ -1234,13 +1276,13 @@ def get_portfolio_result(user):
     #portfolio_table_output.append({'Name': [None], 'ISIN': [None], 'Amount [EUR]': - last (sum) row tbd
 
     #construct scatterplot with historic portfolio return
-    #figure = construct_graph(user)
+    figure = construct_graph(user)
 
     #construct table with weights
     data = portfolio_table_output.to_dict('records')
     columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
 
-    return user.id, s, r, std, data, columns#, figure
+    return user.id, s, r, std, data, columns, figure
 
 ### Execute program
 if __name__ == '__main__':
