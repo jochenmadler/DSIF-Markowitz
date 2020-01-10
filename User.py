@@ -25,6 +25,7 @@ class User():
     time_interval = None
     period_start = None
     req_history = []
+    portfolio_history = None
 
     def __init__(self, id, budget, ISIN_list,
                  time_interval = 'd' ,optimize_objective = "s", period_start = '2018-01-01', broker_fix = 0.1,
@@ -50,7 +51,7 @@ class User():
         optimize_procedure = op.optimizeProcedure(optimize_request)
         optimize_procedure.optimize()
         optimize_procedure.generate_guioutput()
-        self.req_history.append([optimizeRequest,optimize_procedure.optimize_result])
+        self.req_history.append([optimize_request,optimize_procedure.optimize_result])
 
 
 
@@ -62,7 +63,7 @@ class User():
         optimize_procedure = op.optimizeProcedure(optimize_rebalance)
         optimize_procedure.optimize()
         optimize_procedure.generate_guioutput()
-        self.req_history.append([optimizeRequest, optimize_procedure.optimize_result])
+        self.req_history.append([optimize_rebalance, optimize_procedure.optimize_result])
 
 
 class optimizeRequest:
