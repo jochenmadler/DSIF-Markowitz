@@ -12,6 +12,7 @@
 
 import datetime
 import OptimizeProcedure as op
+import SQLHandler as sh
 
 class User():
     id = None
@@ -34,7 +35,10 @@ class User():
         self.id = id
         self.budget = budget
         self.initial_budget = budget
-        self.ISIN_list = ISIN_list
+
+        sorted_ISIN_list = (sh.getACP('2019-01-01', '2019-02-01', ISIN_list)).columns
+        self.ISIN_list = sorted_ISIN_list
+
         self.time_interval = time_interval
         self.optimize_objective = optimize_objective
         self.period_start = period_start
