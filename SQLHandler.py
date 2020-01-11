@@ -1,5 +1,5 @@
 #*******************************************ANWEISUNGEN************************************************
-# Alles directories (1-6) für dich in der setUP funktion anpassen für das if statement mit deinem Namen-> hast du nicht alle files? -> schreib Alex
+# Alle directories (1-6) für dich in der setUP funktion anpassen für das if statement mit deinem Namen-> hast du nicht alle files? -> schreib Alex
 # EINMALIG setUp("Dein Name") ausführen, mit deinem Namen als string
 # dann läuft alles von alleine
 # ACHTUNG!!! das setUp kann mit allen files bis zu 40 min dauern, nicht erschrecken, nicht abbrechen!
@@ -357,7 +357,6 @@ def saveUser(newUser):
         saveResult(newUser.req_history[i][1], newUser.req_history[i][0])
         i += 1
 
-
 def saveResult (result, request):
     start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
@@ -420,6 +419,9 @@ def getUser (id):
     cur.execute(command)
     con.commit()
     result = pd.DataFrame(cur.fetchall())
+    #if the user does not exist
+    if result.empty:
+        return None
 
     #get the isin list
     command = '''select * from isinlist where userid = '{}';'''.format(id)
@@ -559,3 +561,16 @@ def clean():
     con.commit()
     cur.close()
     deleteUserRelations()
+
+def exists(id):
+    start()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+    command = '''select * from tableusers where userid = '{}';'''.format(id)
+    cur.execute(command)
+    con.commit()
+    result = pd.DataFrame(cur.fetchall())
+    # if the user does not exist
+    if result.empty:
+        return False
+    return True
