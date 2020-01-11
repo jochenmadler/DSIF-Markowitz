@@ -1,4 +1,4 @@
-# Version 1.0.5
+# Version 1.0.6
 import json
 import dash
 import dash_table
@@ -13,7 +13,6 @@ import plotly.graph_objects as go
 
 # import function to call data from Alex' SQLHandler
 import SQLHandler as sql_handler
-# Only execute once: sql_handler.setUp('Jochen')
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
@@ -788,10 +787,11 @@ app.layout = html.Div([
             dcc.Graph(id='portfolio_graph_output')
         ]),
 
-        html.Hr(style={
-            'width': '99%',
-            'display': 'inline-block'
-        }),
+
+        #html.Hr(style={
+        #    'width': '99%',
+        #    'display': 'inline-block'
+        #}),
 
         ##OUTPUT 6: 'portfolio_table_output'
         html.Div([
@@ -981,9 +981,14 @@ def create_load_rebalance_portfolio(n_clicks_create,
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    #create new portfolio
+    ##portfolio_creation_button_input pressed: create new portfolio
     if button_id == 'portfolio_creation_button_input':
         if portfolio_name_input is None or portfolio_amount_input is None:
+            raise PreventUpdate
+
+        #stop if username (id) already exists
+        if sql_handler.exists(portfolio_name_input):
+            print('MESSAGE: Portfolio could not be created. Username already exists. Please enter another Username.')
             raise PreventUpdate
 
         #prepare input for optimization procedure
@@ -1033,8 +1038,43 @@ def create_load_rebalance_portfolio(n_clicks_create,
         #start optimization procedure
         user.optimize_req(period_end=period_end)
 
+        #retrieve & unpack results: #1 displayable output and #2 rebalancing layout
+        portfolio_result = get_portfolio_result(user)
+        name_children = portfolio_result[0]
+        sharpe_children = portfolio_result[1]
+        return_children = portfolio_result[2]
+        std_children = portfolio_result[3]
+        table_data = portfolio_result[4]
+        table_columns = portfolio_result[5]
+        df_graph = portfolio_result[6]
+        graph_figure = portfolio_result[7]
+        portfolio_rebalance_popup = {'display': 'block'}
+
         #save user to local SQL database
+        #save df_graph in user: user.xxx = df_graph (Marcl)
         #sql_handler.saveUser(user)
+
+        return name_children, \
+               sharpe_children, \
+               return_children, \
+               std_children, \
+               table_data, \
+               table_columns, \
+               portfolio_rebalance_popup,\
+               graph_figure
+
+    ##portfolio_loading_button_input pressed: Load user and portfolio
+    elif button_id == 'portfolio_loading_button_input' and n_clicks_load is not None:
+        if portfolio_name_input is None:
+            raise PreventUpdate
+
+        #stop if username (id) does not exist
+        if not sql_handler.exists(portfolio_name_input):
+            print('MESSAGE: Portfolio could not be loaded. Username does not exist. Please enter another Username.')
+            raise PreventUpdate
+
+        # get user from SQL data base
+        user = sql_handler.getUser(portfolio_name_input)
 
         #retrieve & unpack results: #1 displayable output and #2 rebalancing layout
         portfolio_result = get_portfolio_result(user)
@@ -1044,7 +1084,8 @@ def create_load_rebalance_portfolio(n_clicks_create,
         std_children = portfolio_result[3]
         table_data = portfolio_result[4]
         table_columns = portfolio_result[5]
-        graph_figure = portfolio_result[6]
+        df_graph = portfolio_result[6]
+        graph_figure = portfolio_result[7]
         portfolio_rebalance_popup = {'display': 'block'}
 
         return name_children, \
@@ -1056,32 +1097,50 @@ def create_load_rebalance_portfolio(n_clicks_create,
                portfolio_rebalance_popup,\
                graph_figure
 
-    #load user and portfolio
-    elif button_id == 'portfolio_loading_button_input' and n_clicks_load is not None:
-        if portfolio_name_input is None:
-            raise PreventUpdate
-
-        # get user from SQL data base
-        # user = sql_handler.getUser(user)
-        # retrieve results as displayable output and display re-balancing option
-        # result = get_portfolio_result(user)
-        # portfolio_rebalance_popup = {'display': 'block'}
-        ##RETURN Statement missing: Error message
-        raise PreventUpdate
-
+    ##portfolio_rebalance_button_input pressed: Rebalance current portfolio with new end date
     elif button_id == 'portfolio_rebalance_button_input' and n_clicks_rebalance is not None:
         if portfolio_name_input is None:
             raise PreventUpdate
 
+        #stop if username (id) does not exist
+        if not sql_handler.exists(portfolio_name_input):
+            print('MESSAGE: Portfolio could not be rebalanced. Username does not exist. Please enter another Username.')
+            raise PreventUpdate
+
         # get user from SQL data base
-        # user = sql_handler.getUser(user)
-        # period_end = portfolio_time_period_end_input[:-9]
-        # user.optimize_req(period_end)
-        # retrieve results as displayable output and display re-balancing option
-        # result = get_portfolio_result(user)
-        # portfolio_rebalance_popup = {'display': 'block'}
-        ##RETURN Statement missing: Error message
-        raise PreventUpdate
+        user = sql_handler.getUser(portfolio_name_input)
+        if len(portfolio_time_period_end_input) > 10:
+            period_end = portfolio_time_period_end_input[:-9]
+        else:
+            period_end = portfolio_time_period_end_input
+
+        #start optimization procedure
+        user.optimize_req(period_end=period_end)
+
+        #retrieve & unpack results: #1 displayable output and #2 rebalancing layout
+        portfolio_result = get_portfolio_result(user)
+        name_children = portfolio_result[0]
+        sharpe_children = portfolio_result[1]
+        return_children = portfolio_result[2]
+        std_children = portfolio_result[3]
+        table_data = portfolio_result[4]
+        table_columns = portfolio_result[5]
+        df_graph = portfolio_result[6]
+        graph_figure = portfolio_result[7]
+        portfolio_rebalance_popup = {'display': 'block'}
+
+        #save user to local SQL database: new portfolio should be appended to req_history ??
+        #save df_graph in user: user.xxx = df_graph (Marcl)
+        #sql_handler.saveUser(user)
+
+        return name_children, \
+               sharpe_children, \
+               return_children, \
+               std_children, \
+               table_data, \
+               table_columns, \
+               portfolio_rebalance_popup,\
+               graph_figure
 
     #initial state: no button pressed
     raise PreventUpdate
@@ -1186,7 +1245,6 @@ def construct_graph(user):
     #obtain gui_weights (percentage) and get_acp (returns). Then calculate daily (weighted) portfolio return
     procedure = user.req_history[-1][1]
     df_weights = procedure.gui_weights.copy()
-    request = user.req_history[-1][0]
     comps = []
     for i, row in procedure.gui_weights.iterrows():
         comps.append(i)
@@ -1217,45 +1275,49 @@ def construct_graph(user):
             y_values.append(y_values[-1] + y)
         x_values.append(df_acp.iloc[i][0])
 
-    #df_graph = pd.DataFrame({'date': x_values, 'portfolio return': y_values})
-    #print(df_graph)
+    df_graph = pd.DataFrame({'date': x_values, 'portfolio return': y_values})
 
-    #construct scatterplot with x_values (time) and y_values (portfolio return)
+    return df_graph
+
+def construct_figure(user_period_end, df_graph):
+    # construct scatterplot from df_graph: x_values (date) and y_values (portfolio return)
+    x_values = df_graph['date'].tolist()
+    y_values = df_graph['portfolio return'].tolist()
+
     figure = go.Figure(
-        data = go.Scatter(
-            x = x_values,
-            y = y_values,
-            hoverinfo = 'x,y'
+        data=go.Scatter(
+            x=x_values,
+            y=y_values,
+            hoverinfo='x,y'
         ),
-        layout = go.Layout(
-            title = 'Cumulated Portfolio Return [%]',
-            plot_bgcolor = '#ffffff',   #f4f4f4 (light grey)
-            paper_bgcolor = '#ffffff',   #f4f4f4 (light grey)
+        layout=go.Layout(
+            title='Cumulated Portfolio Return [%]',
+            plot_bgcolor='#ffffff',  # f4f4f4 (light grey)
+            paper_bgcolor='#ffffff',  # f4f4f4 (light grey)
             xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
             yaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
-            shapes = [
+            margin = dict(t=80),
+            shapes=[
                 dict(
-                    type = 'rect',
-                    xref = 'x',
-                    yref = 'paper',
-                    x0 = request.period_end,
-                    y0 = 0,
-                    x1 = '2019-11-22',
-                    y1 = 1,
-                    fillcolor = '#fafafa',
-                    opacity = 0.8,
-                    layer = 'below',
-                    line_width = 0
-                     )
+                    type='rect',
+                    xref='x',
+                    yref='paper',
+                    x0=user_period_end,
+                    y0=0,
+                    x1='2019-11-22',
+                    y1=1,
+                    fillcolor='#fafafa',
+                    opacity=0.8,
+                    layer='below',
+                    line_width=0
+                )
             ]
         )
     )
-
     return figure
 
 def get_portfolio_result(user):
     procedure = user.req_history[-1][1]
-
     s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
     r = 'Total return: {:.2f}'.format(procedure.total_return)
     std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
@@ -1276,14 +1338,16 @@ def get_portfolio_result(user):
     #portfolio_table_output.append({'Name': [None], 'ISIN': [None], 'Amount [EUR]': - last (sum) row tbd
 
     #construct scatterplot with historic portfolio return
-    figure = construct_graph(user)
+    df_graph = construct_graph(user)
+    user_period_end = user.req_history[-1][0].period_end #for highlighting grey plot area (period end - now)
+    figure = construct_figure(user_period_end, df_graph)
 
     #construct table with weights
     data = portfolio_table_output.to_dict('records')
     columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
 
-    return user.id, s, r, std, data, columns, figure
+    return user.id, s, r, std, data, columns, df_graph, figure
 
 ### Execute program
 if __name__ == '__main__':
-    app.run_server(debug=True)
+   app.run_server(debug=True)
