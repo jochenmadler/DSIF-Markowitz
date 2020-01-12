@@ -327,8 +327,9 @@ def saveRequest (optimizeRequest):
     cur.close()
 
 def saveUser(newUser):
-
     start()
+    #delete the user first completely
+    deleteUser(newUser)
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
     command = '''insert into tableusers
@@ -444,17 +445,20 @@ def getUser (id):
     con.commit()
     requests = pd.DataFrame(cur.fetchall())
 
-    reqHistory = []
+    reqHistory = [] # new
+
     i =0
     for index, row in requests.iterrows():
         req = us.optimizeRequest
         req.user = newUser
         req.id = row[1]
         req.period_end = row[2]
-        #getResult(newUser, req)
-        newUser.req_history[i][0] = req
-        newUser.req_history[i][1] = getResult(req)
-
+        #newUser.req_history[i][0] = req
+        #newUser.req_history[i][1] = getResult(req)
+        tup = (req, getResult(req)) # new
+        reqHistory.append(tup) # new
+        i += 1 # new
+    newUser.req_history = reqHistory
     return newUser
 
 def getResult (request):
