@@ -1,4 +1,4 @@
-# Version 1.0.6
+# Version 1.0.7
 import json
 import dash
 import dash_table
@@ -683,7 +683,7 @@ app.layout = html.Div([
                         ##INPUT 10: 'portfolio_rebalance_end_date_input'
                         dcc.DatePickerSingle(
                             id='portfolio_rebalance_end_date_input',
-                            date=dt(2018, 9, 1),
+                            date=dt(2019, 1, 1),
                             min_date_allowed=dt(1991, 1, 1),
                             max_date_allowed=dt(2019, 9, 1),
                             display_format='DD/MM/YYYY',
@@ -1051,8 +1051,8 @@ def create_load_rebalance_portfolio(n_clicks_create,
         portfolio_rebalance_popup = {'display': 'block'}
 
         #save user to local SQL database
-        #save df_graph in user: user.xxx = df_graph (Marcl)
-        #sql_handler.saveUser(user)
+        user.portfolio_history = df_graph
+        sql_handler.saveUser(user)
 
         return name_children, \
                sharpe_children, \
@@ -1129,9 +1129,9 @@ def create_load_rebalance_portfolio(n_clicks_create,
         graph_figure = portfolio_result[7]
         portfolio_rebalance_popup = {'display': 'block'}
 
-        #save user to local SQL database: new portfolio should be appended to req_history ??
-        #save df_graph in user: user.xxx = df_graph (Marcl)
-        #sql_handler.saveUser(user)
+        #save user to local SQL database and override last portfolio_history (df)
+        user.portfolio_history = df_graph
+        sql_handler.saveUser(user)
 
         return name_children, \
                sharpe_children, \
