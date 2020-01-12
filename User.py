@@ -36,7 +36,7 @@ class User():
         self.budget = budget
         self.initial_budget = budget
 
-        sorted_ISIN_list = (sh.getACP('2019-01-01', '2019-02-01', ISIN_list)).columns
+        sorted_ISIN_list = (sh.getACP('2019-01-01', '2019-01-01', ISIN_list)).columns #2019-02-01 davor
         self.ISIN_list = sorted_ISIN_list
 
         self.time_interval = time_interval

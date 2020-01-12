@@ -445,19 +445,16 @@ def getUser (id):
     con.commit()
     requests = pd.DataFrame(cur.fetchall())
 
-    reqHistory = [] # new
-
+    reqHistory = []
     i =0
     for index, row in requests.iterrows():
         req = us.optimizeRequest
         req.user = newUser
         req.id = row[1]
         req.period_end = row[2]
-        #newUser.req_history[i][0] = req
-        #newUser.req_history[i][1] = getResult(req)
-        tup = (req, getResult(req)) # new
-        reqHistory.append(tup) # new
-        i += 1 # new
+        tup = (req, getResult(req))
+        reqHistory.append(tup)
+        i += 1
     newUser.req_history = reqHistory
     return newUser
 
@@ -496,10 +493,11 @@ def getResult (request):
     con.commit()
     res = pd.DataFrame(cur.fetchall())
     res = res.transpose()
-    res.rename(columns = res.iloc[0])
     header = res.iloc[0,:]
-    weights = pd.DataFrame(res.iloc[1,:], index= ["isin", "weights"], columns= header)
-    newResult.security_weights = weights
+    res.drop(res.index[0],inplace= True)
+    res.columns = header
+    res.index = ["weights"]
+    newResult.security_weights = res
 
     return newResult
 
@@ -575,6 +573,32 @@ def exists(id):
     con.commit()
     result = pd.DataFrame(cur.fetchall())
     # if the user does not exist
+    cur.close()
     if result.empty:
         return False
     return True
+
+def deleteAllUsers():
+    start()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+    command = '''select * from tableusers;'''
+    cur.execute(command)
+    con.commit()
+    result = pd.DataFrame(cur.fetchall())
+    delUsers = result[0]
+    for delUser in delUsers:
+        deleteUserByName(delUser)
+    cur.close()
+
+def deleteUserByName(id):
+    start()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+
+    command = '''delete from tableusers 
+        where userID = '{}';'''.format(id)
+
+    cur.execute(command)
+    con.commit()
+    cur.close()
