@@ -586,6 +586,8 @@ def deleteAllUsers():
     cur.execute(command)
     con.commit()
     result = pd.DataFrame(cur.fetchall())
+    if result.empty:
+        return
     delUsers = result[0]
     for delUser in delUsers:
         deleteUserByName(delUser)
