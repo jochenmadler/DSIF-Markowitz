@@ -1,4 +1,4 @@
-# Version 1.0.7
+# Version 1.0.8
 import json
 import dash
 import dash_table
@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 
 # import function to call data from Alex' SQLHandler
 import SQLHandler as sql_handler
+sql_handler.deleteAllUsers()
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
@@ -515,7 +516,7 @@ app.layout = html.Div([
                     #7.1: 'portfolio_time_period_start_input'
                     dcc.DatePickerSingle(
                         id='portfolio_time_period_start_input',
-                        date=dt(1990, 1, 1),
+                        date=dt(2015, 1, 1),
                         min_date_allowed=dt(1990, 1, 1),
                         max_date_allowed=dt(2019, 9, 1),
                         display_format='DD/MM/YYYY',
@@ -548,7 +549,7 @@ app.layout = html.Div([
                     #7.2: 'portfolio_time_period_end_input'
                     dcc.DatePickerSingle(
                         id='portfolio_time_period_end_input',
-                        date=dt(2018, 9, 1),
+                        date=dt(2017, 1, 1),
                         min_date_allowed=dt(1991, 1, 1),
                         max_date_allowed=dt(2019, 9, 1),
                         display_format='DD/MM/YYYY',
@@ -1109,10 +1110,10 @@ def create_load_rebalance_portfolio(n_clicks_create,
 
         # get user from SQL data base
         user = sql_handler.getUser(portfolio_name_input)
-        if len(portfolio_time_period_end_input) > 10:
-            period_end = portfolio_time_period_end_input[:-9]
+        if len(portfolio_time_period_rebalance_input) > 10:
+            period_end = portfolio_time_period_rebalance_input[:-9]
         else:
-            period_end = portfolio_time_period_end_input
+            period_end = portfolio_time_period_rebalance_input
 
         #start optimization procedure
         user.optimize_req(period_end=period_end)
@@ -1252,34 +1253,44 @@ def construct_graph(user):
     df_acp.insert(0, 'date', df_acp.index)
     df_acp.reset_index(inplace = True, drop = True)
 
-    #obtain cumulated portfolio return for each date in get_acp
+    #obtain portfolio return for each date in get_acp since base_date (date where every selected ISIN has a value)
     x_values = []
     y_values = []
-    print('MESSAGE: Graph is being constructed...')
+    #find base_date_index
+    for i, row in df_acp.iloc[1:].iterrows():
+        if row.isnull().any():
+            continue
+        else:
+            base_date_index = i
+            break
+
+    print('MESSAGE: Graph is being constructed (1/2)')
     for i, row in df_acp.iloc[1:].iterrows():
         if i == 0 or row.isnull().any():
             continue
         ret_values = []
+        #for each date i, get return of each stock (ret_values) relative to base_date
         for col in df_acp.columns[1:]:
-            ret = (df_acp.iloc[i][col] - df_acp.iloc[i - 1][col]) / df_acp.iloc[i - 1][col]
+            ret = ((df_acp.iloc[i][col] - df_acp.iloc[base_date_index][col]) / df_acp.iloc[base_date_index][col])*100
             ret_values.append(ret)
         ctr = 0
         y = 0
+        #for each date i, calculate the weighted portfolio return (y)
         for k in ret_values:
             percent = df_weights.iloc[ctr][0]
             y += k * percent
             ctr += 1
-        if not y_values or pd.isna(y_values[-1]): #first y_value cannot be cumulated or last NaN value should not be added up
-            y_values.append(y)
-        else: #y_value is current plus last value
-            y_values.append(y_values[-1] + y)
+        #append portfolio return (y) to y_values
+        y_values.append(y)
+        #append date i to x_values
         x_values.append(df_acp.iloc[i][0])
 
     df_graph = pd.DataFrame({'date': x_values, 'portfolio return': y_values})
+    base_date = df_acp.iloc[base_date_index][0].strftime('%d.%m.%Y')
+    print('MESSAGE: Graph is being constructed (2/2)')
+    return df_graph, base_date
 
-    return df_graph
-
-def construct_figure(user_period_end, df_graph):
+def construct_figure(base_date, user_period_end, df_graph):
     # construct scatterplot from df_graph: x_values (date) and y_values (portfolio return)
     x_values = df_graph['date'].tolist()
     y_values = df_graph['portfolio return'].tolist()
@@ -1291,7 +1302,7 @@ def construct_figure(user_period_end, df_graph):
             hoverinfo='x,y'
         ),
         layout=go.Layout(
-            title='Cumulated Portfolio Return [%]',
+            title='Portfolio Return since {} [%]'.format(base_date),
             plot_bgcolor='#ffffff',  # f4f4f4 (light grey)
             paper_bgcolor='#ffffff',  # f4f4f4 (light grey)
             xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
@@ -1338,9 +1349,12 @@ def get_portfolio_result(user):
     #portfolio_table_output.append({'Name': [None], 'ISIN': [None], 'Amount [EUR]': - last (sum) row tbd
 
     #construct scatterplot with historic portfolio return
-    df_graph = construct_graph(user)
+    construct_graph_result = construct_graph(user)
+    df_graph = construct_graph_result[0]
+    base_date_graph = construct_graph_result[1]
     user_period_end = user.req_history[-1][0].period_end #for highlighting grey plot area (period end - now)
-    figure = construct_figure(user_period_end, df_graph)
+    print('perdiod end:', user_period_end)
+    figure = construct_figure(base_date_graph, user_period_end, df_graph)
 
     #construct table with weights
     data = portfolio_table_output.to_dict('records')
