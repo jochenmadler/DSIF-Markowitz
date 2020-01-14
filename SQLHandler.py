@@ -33,6 +33,10 @@ directory3 = ""
 directory4 = ""
 directory5 = ""
 directory6 = ""
+directory7 = ""
+directory8 = ""
+directory9 = ""
+directory10 = ""
 codeRegister = 'companies'
 tableName = "acp"
 
@@ -62,7 +66,7 @@ def start ():
 
 def setUp(name):
 
-    global database, host, user, password, port, directory, directory2, directory3, codeRegister
+    global database, host, user, password, port, directory, directory2, directory3, directory4, directory5, directory6, directory7, directory8, directory9, directory10, codeRegister
 
     if name == "Jochen":
         database = "postgres"
@@ -76,6 +80,10 @@ def setUp(name):
         directory4 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\HSI.txt"
         directory5 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\IBEX35.txt"
         directory6 = "C:\\Users\joche\OneDrive\TUM - TUM-BWL\Semester 7\\04 Seminar Data Science in Finance\Capstone Projekt\Data\SSE.txt"
+        directory7 = ""
+        directory8 = ""
+        directory9 = ""
+        directory10 = ""
         codeRegister = "companies"
     elif name == "Marcel":
         database = "postgres"
@@ -84,11 +92,15 @@ def setUp(name):
         host = "localhost"
         port = "5432"
         directory = "C:\\Users\mpere\Documents\Python Scripts\DSIF-Markowitz/DAX.txt"
-        directory2 = "" # insert something here
+        directory2 = ""
         directory3 = ""
         directory4 = ""
         directory5 = ""
         directory6 = ""
+        directory7 = ""
+        directory8 = ""
+        directory9 = ""
+        directory10 = ""
         codeRegister = "companies"
     elif name == "Alex":
         database = "dsif"
@@ -96,13 +108,16 @@ def setUp(name):
         password = "zaubermaus"
         host = "localhost"
         port = "1997"
-        directory = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/DAX.txt'
-        directory2 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/CAC40.txt"
-        directory3 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/FTSE100.txt"
-        directory4 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/IBEX35.txt"
-        directory5 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/SSE.txt"
-        directory6 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/PortfolioProject/NEW/Real/HSI.txt"
-        codeRegister = 'companies'
+        directory = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/AEXNEW.txt'
+        directory2 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/CAC40NEW.txt"
+        directory3 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/FTSE100.txt"
+        directory4 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/IBEX35.txt"
+        directory5 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SZSE.txt"
+        directory6 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/HSINEW.txt"
+        directory7 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DAXNEW.txt"
+        directory8 = "//Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/Nikkei300NEW.txt"
+        directory9 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SP1500NEW.txt"
+        directory10 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DaxIndex.txt"
 
     #remove all old relations
     clean()
@@ -128,6 +143,22 @@ def setUp(name):
     directory = directory6
     inTable()
     print("Sixth import done of")
+    print(directory)
+    directory = directory7
+    inTable()
+    print("Seventh import done of")
+    print(directory)
+    directory = directory8
+    inTable()
+    print("Eigth import done of")
+    print(directory)
+    directory = directory9
+    inTable()
+    print("Ninth import done of")
+    print(directory)
+    directory = directory10
+    inTable()
+    print("Tenth import done of")
     print(directory)
 
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
