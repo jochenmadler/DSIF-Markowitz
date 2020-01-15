@@ -25,12 +25,12 @@ df_CAC40 = sql_handler.findComp('CAC40', 'Index', ['Name', 'ISIN', 'Index'], 'co
 df_CAC40.columns = ['Name', 'ISIN', 'Index']
 df_FTSE100 = sql_handler.findComp('FTSE100', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_FTSE100.columns = ['Name', 'ISIN', 'Index']
-df_HSI = sql_handler.findComp('HangSengIndex', 'Index', ['Name', 'ISIN', 'Index'], 'companies') #alles in CAPS bald
+df_HSI = sql_handler.findComp('HSI', 'Index', ['Name', 'ISIN', 'Index'], 'companies') #alles in CAPS bald
 df_HSI.columns = ['Name', 'ISIN', 'Index']
 df_IBEX35 = sql_handler.findComp('IBEX35', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_IBEX35.columns = ['Name', 'ISIN', 'Index']
-df_SSE = sql_handler.findComp('SSE', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
-df_SSE.columns = ['Name', 'ISIN', 'Index']
+df_SZSE = sql_handler.findComp('SZSE', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_SZSE.columns = ['Name', 'ISIN', 'Index']
 
 # set up options for asset mix - cut df's and create dictionary for all options
 # make DAX30 df to dict: d_DAX30
@@ -58,13 +58,13 @@ df_ = df_IBEX35.drop(df_IBEX35.columns[[1,2]], axis=1)
 df_.rename(columns={'Name': 'IBEX35'}, inplace=True)
 d_IBEX35 = df_.to_dict('list')
 
-# make SSE df to dict: d_SSE
-df_ = df_SSE.drop(df_SSE.columns[[1,2]], axis=1)
-df_.rename(columns={'Name': 'SSE'}, inplace=True)
-d_SSE = df_.to_dict('list')
+# make SZSE df to dict: d_SZSE
+df_ = df_SZSE.drop(df_SZSE.columns[[1,2]], axis=1)
+df_.rename(columns={'Name': 'SZSE'}, inplace=True)
+d_SZSE = df_.to_dict('list')
 
 # concatenate all dicts to one: all_stock_options
-all_stock_options = dict(d_Dax30, **d_CAC40, **d_FTSE100, **d_HSI, **d_IBEX35, **d_SSE)
+all_stock_options = dict(d_Dax30, **d_CAC40, **d_FTSE100, **d_HSI, **d_IBEX35, **d_SZSE)
 
 #print('df_DAX30:\n', df_DAX30.head(), '\n')
 #print('ADIDAS ISIN:', df_DAX30.loc[df_DAX30['Name'] == 'ADIDAS'].iloc[0]['ISIN'])
@@ -358,8 +358,8 @@ app.layout = html.Div([
             }),
             html.Div([
                 html.Div([
-                    dcc.Checklist(id='portfolio_asset_SSE_activate',
-                                  options=[{'label': 'SSE', 'value': 'SSE'}])
+                    dcc.Checklist(id='portfolio_asset_SZSE_activate',
+                                  options=[{'label': 'SZSE', 'value': 'SZSE'}])
                 ], style={
                     'width': '30%',
                     'float': 'left',
@@ -368,7 +368,7 @@ app.layout = html.Div([
                     'horizontalAlign': 'middle'
                 }),
                 html.Div([
-                    dcc.Dropdown(id='portfolio_asset_SSE_input',
+                    dcc.Dropdown(id='portfolio_asset_SZSE_input',
                                  # options will be filled by callback
                                  multi=True)
                 ], style={
@@ -837,8 +837,8 @@ app.layout = html.Div([
 #4.4.2: 'portfolio_asset_IBEX35_input'
 #4.5.1: 'portfolio_asset_HSI_activate'
 #4.5.2: 'portfolio_asset_HSI_input'
-#4.6.1: 'portfolio_asset_SSE_activate'
-#4.6.2: 'portfolio_asset_SSE_input'
+#4.6.1: 'portfolio_asset_SZSE_activate'
+#4.6.2: 'portfolio_asset_SZSE_input'
 #5.1:   'portfolio_broker_fix_input'
 #5.2:   'portfolio_broker_var_input'
 #6:     'portfolio_asset_split_input'
@@ -912,15 +912,15 @@ def set_HSI_Dropdown(value_HSI):
         return [{'label': '', 'value': ''}]
 # select all options in HSI when HSI Checklist is ticked - #TODO
 
-# activate SSE Dropdown menu when SSE Checklist is ticked
-@app.callback(Output('portfolio_asset_SSE_input', 'options'),
-              [Input('portfolio_asset_SSE_activate', 'value')])
-def set_SSE_Dropdown(value_SSE):
-    if value_SSE is not None and value_SSE:
-        return [{'label': i, 'value': i} for i in all_stock_options[value_SSE[0]]]
+# activate SZSE Dropdown menu when SZSE Checklist is ticked
+@app.callback(Output('portfolio_asset_SZSE_input', 'options'),
+              [Input('portfolio_asset_SZSE_activate', 'value')])
+def set_SZSE_Dropdown(value_SZSE):
+    if value_SZSE is not None and value_SZSE:
+        return [{'label': i, 'value': i} for i in all_stock_options[value_SZSE[0]]]
     else:
         return [{'label': '', 'value': ''}]
-# select all options in SSE when SSE Checklist is ticked - #TODO
+# select all options in SZSE when SZSE Checklist is ticked - #TODO
 
 ###DEF 1: create_load_rebalance_portfolio
 @app.callback([Output('portfolio_name_output', 'children'),
@@ -942,7 +942,7 @@ def set_SSE_Dropdown(value_SSE):
                State('portfolio_asset_FTSE100_input', 'value'),
                State('portfolio_asset_IBEX35_input', 'value'),
                State('portfolio_asset_HSI_input', 'value'),
-               State('portfolio_asset_SSE_input', 'value'),
+               State('portfolio_asset_SZSE_input', 'value'),
                State('portfolio_broker_fix_input', 'value'),
                State('portfolio_broker_var_input', 'value'),
                State('portfolio_asset_split_input', 'value'),
@@ -961,7 +961,7 @@ def create_load_rebalance_portfolio(n_clicks_create,
                                     portfolio_asset_FTSE100_input,
                                     portfolio_asset_IBEX35_input,
                                     portfolio_asset_HSI_input,
-                                    portfolio_asset_SSE_input,
+                                    portfolio_asset_SZSE_input,
                                     portfolio_broker_fix_input,
                                     portfolio_broker_var_input,
                                     portfolio_asset_split_input,
@@ -998,7 +998,7 @@ def create_load_rebalance_portfolio(n_clicks_create,
                                                 portfolio_asset_FTSE100_input,
                                                 portfolio_asset_IBEX35_input,
                                                 portfolio_asset_HSI_input,
-                                                portfolio_asset_SSE_input)
+                                                portfolio_asset_SZSE_input)
 
         #if ISIN_list is empty, stop portfolio optimization procedure
         if not ISIN_list:
@@ -1156,7 +1156,7 @@ def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
                                               portfolio_asset_FTSE100_input,
                                               portfolio_asset_IBEX35_input,
                                               portfolio_asset_HSI_input,
-                                              portfolio_asset_SSE_input):
+                                              portfolio_asset_SZSE_input):
     isin_list = []
 
     if portfolio_asset_DAX30_input is not None:
@@ -1189,10 +1189,10 @@ def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
                 isin = df_HSI.loc[df_HSI['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
-    if portfolio_asset_SSE_input is not None:
-        for x in portfolio_asset_SSE_input:
-            if x in df_SSE.Name.values:
-                isin = df_SSE.loc[df_SSE['Name'] == x].iloc[0]['ISIN']
+    if portfolio_asset_SZSE_input is not None:
+        for x in portfolio_asset_SZSE_input:
+            if x in df_SZSE.Name.values:
+                isin = df_SZSE.loc[df_SZSE['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     return isin_list
@@ -1216,8 +1216,8 @@ def get_asset_name_to_isin_list(isin):
        elif isin in df_HSI.ISIN.values:
            name = df_HSI.loc[df_HSI['ISIN'] == isin].iloc[0]['Name']
 
-       elif isin in df_SSE.ISIN.values:
-           name = df_SSE.loc[df_SSE['ISIN'] == isin].iloc[0]['Name']
+       elif isin in df_SZSE.ISIN.values:
+           name = df_SZSE.loc[df_SZSE['ISIN'] == isin].iloc[0]['Name']
 
        return name
 

@@ -3,7 +3,6 @@
 # EINMALIG setUp("Dein Name") ausführen, mit deinem Namen als string
 # dann läuft alles von alleine
 # ACHTUNG!!! das setUp kann mit allen files bis zu 40 min dauern, nicht erschrecken, nicht abbrechen!
-# funktionen saveUser und getUser sind noch nicht fertig implementiert, getUser returned momentan nur einen Dummy!!
 # hast du daten kaputt gemacht? :/ führe einfach setUP noch einmal aus
 
 # saveuser erwartet einen User als input (saveUser(User))
@@ -12,6 +11,7 @@
 # ****************Bitte niemals den gleichen user (gleiche UserID ist ausschlaggebend) zweimal abspeichern ohne ihn vorher wieder zu löschen
 # -> "Sonst passieren schlimme Dinge" (Thomas Neumann)
 
+# WICHTIG: Um doppelten SetUp zu vermeiden, bitte den setUp aus einem anderen file starten!
 import pandas as pd
 from sqlalchemy import create_engine
 import sqlalchemy
@@ -63,6 +63,7 @@ def start ():
         host = "localhost"
         port = "1997"
 
+#def smallSetUp()
 
 def setUp(name):
 
@@ -115,7 +116,7 @@ def setUp(name):
         directory5 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SZSE.txt"
         directory6 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/HSINEW.txt"
         directory7 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DAXNEW.txt"
-        directory8 = "//Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/Nikkei300NEW.txt"
+        directory8 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/Nikkei300NEW.txt"
         directory9 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SP1500NEW.txt"
         directory10 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DaxIndex.txt"
 
@@ -205,7 +206,7 @@ def setUp(name):
     command = '''create table result
                 (requestID varchar (80) ,
                 userID varchar (80) ,
-                sharpeRatio integer,
+                sharpeRatio float8,
                 totalVolatility float8,
                 totalReturn float8,
                 transactionCost float8,
@@ -253,15 +254,17 @@ def inTable():
 
     # ****************************Puts the Companies Names ISIN  DSCD and Index in a relation***********************************
     codeNames = df[['name', 'isin', 'dscd', 'index']]
-    try:
-        codeNames.to_sql(codeRegister, create_engine(
+    #try:
+    codeNames.to_sql(codeRegister, create_engine(
             'postgresql://' + user + ':' + password + '@' + host + ':' + port + '/' + database), if_exists='append',
                          index=False)
-    except sqlalchemy.exc.DataError:
+    """
+    except sqlalchemy.exc.DataError as a:
+        print(a)
         print("******************** \n"
               " Your input file is apparently in the wrong format, please check if the file is in txt with tapstop and not as CSV \n"
               "********************")
-
+    """
     # now drop those data, only the isin is now relevant
     df = df.drop(columns=['name', 'dscd', 'index'])
 
