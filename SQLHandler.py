@@ -250,21 +250,21 @@ def inTable():
     # read in the future codeNames relation
     df = pd.read_csv(directory, sep="\t", error_bad_lines=False, decimal=',')
     df.columns = df.columns.str.lower()
-    #df['isin'] = df['isin'].str.lower()
+    #drop false imports
+    df = df.loc[:, ~df.columns.str.contains('^unnamed')]
 
-    # ****************************Puts the Companies Names ISIN  DSCD and Index in a relation***********************************
+    #****************************Puts the Companies Names ISIN  DSCD and Index in a relation***********************************
     codeNames = df[['name', 'isin', 'dscd', 'index']]
-    #try:
-    codeNames.to_sql(codeRegister, create_engine(
+    try:
+        codeNames.to_sql(codeRegister, create_engine(
             'postgresql://' + user + ':' + password + '@' + host + ':' + port + '/' + database), if_exists='append',
                          index=False)
-    """
-    except sqlalchemy.exc.DataError as a:
-        print(a)
+
+    except sqlalchemy.exc.DataError:
         print("******************** \n"
               " Your input file is apparently in the wrong format, please check if the file is in txt with tapstop and not as CSV \n"
               "********************")
-    """
+
     # now drop those data, only the isin is now relevant
     df = df.drop(columns=['name', 'dscd', 'index'])
 
