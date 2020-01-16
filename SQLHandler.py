@@ -298,7 +298,7 @@ def getACP (startDate, endDate, comps):
     compsStr = "','".join([comp.upper() for comp in comps])
 
     command = '''
-            select *
+            select distinct *
             from acp
             where isin in ('{}') and date between '{}' and '{}';
             '''.format(compsStr, startDate, endDate)
