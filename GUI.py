@@ -1,4 +1,4 @@
-# Version 1.0.8
+# Version 1.0.9
 import json
 import dash
 import dash_table
@@ -13,24 +13,40 @@ import plotly.graph_objects as go
 
 # import function to call data from Alex' SQLHandler
 import SQLHandler as sql_handler
-sql_handler.deleteAllUsers()
+#sql_handler.deleteAllUsers()
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
 
 # preload all stock data (from local PostgreSQL) into df's: [0: Name, 1: ISIN, 2: Index]
+#Germany: Frankfurt
 df_DAX30 = sql_handler.findComp('DAX30', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_DAX30.columns = ['Name', 'ISIN', 'Index']
+#Netherlands: Amsterdam
+df_AEX = sql_handler.findComp('AEX', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_AEX.columns = ['Name', 'ISIN', 'Index']
+#France: Paris
 df_CAC40 = sql_handler.findComp('CAC40', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_CAC40.columns = ['Name', 'ISIN', 'Index']
-df_FTSE100 = sql_handler.findComp('FTSE100', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
-df_FTSE100.columns = ['Name', 'ISIN', 'Index']
-df_HSI = sql_handler.findComp('HSI', 'Index', ['Name', 'ISIN', 'Index'], 'companies') #alles in CAPS bald
-df_HSI.columns = ['Name', 'ISIN', 'Index']
+#Spain: Madrid
 df_IBEX35 = sql_handler.findComp('IBEX35', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_IBEX35.columns = ['Name', 'ISIN', 'Index']
+#UK: London
+df_FTSE100 = sql_handler.findComp('FTSE100', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_FTSE100.columns = ['Name', 'ISIN', 'Index']
+#USA: New York
+df_SP1500 = sql_handler.findComp('SP1500', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_SP1500.columns = ['Name', 'ISIN', 'Index']
+#Japan: Tokio
+df_NIKKEI300 = sql_handler.findComp('Nikkei300', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
+df_NIKKEI300.columns = ['Name', 'ISIN', 'Index']
+#Hongkong
+df_HSI = sql_handler.findComp('HSI', 'Index', ['Name', 'ISIN', 'Index'], 'companies') #alles in CAPS bald
+df_HSI.columns = ['Name', 'ISIN', 'Index']
+#China: Shenzhen
 df_SZSE = sql_handler.findComp('SZSE', 'Index', ['Name', 'ISIN', 'Index'], 'companies')
 df_SZSE.columns = ['Name', 'ISIN', 'Index']
+
 
 # set up options for asset mix - cut df's and create dictionary for all options
 # make DAX30 df to dict: d_DAX30
@@ -38,25 +54,40 @@ df_ = df_DAX30.drop(df_DAX30.columns[[1,2]], axis=1)
 df_.rename(columns={'Name': 'DAX30'}, inplace=True)
 d_Dax30 = df_.to_dict('list')
 
+# make AEX df to dict: d_AEX
+df_ = df_AEX.drop(df_AEX.columns[[1,2]], axis=1)
+df_.rename(columns={'Name': 'AEX'}, inplace=True)
+d_AEX = df_.to_dict('list')
+
 # make CAC40 df to dict: d_CAC40
 df_ = df_CAC40.drop(df_CAC40.columns[[1,2]], axis=1)
 df_.rename(columns={'Name': 'CAC40'}, inplace=True)
 d_CAC40 = df_.to_dict('list')
+
+# make IBEX35 df to dict: d_IBEX35
+df_ = df_IBEX35.drop(df_IBEX35.columns[[1,2]], axis=1)
+df_.rename(columns={'Name': 'IBEX35'}, inplace=True)
+d_IBEX35 = df_.to_dict('list')
 
 # make FTSE100 df to dict: d_FTSE100
 df_ = df_FTSE100.drop(df_FTSE100.columns[[1,2]], axis=1)
 df_.rename(columns={'Name': 'FTSE100'}, inplace=True)
 d_FTSE100 = df_.to_dict('list')
 
+# make SP1500 df to dict: d_SP1500
+df_ = df_SP1500.drop(df_SP1500.columns[[1,2]], axis=1)
+df_.rename(columns={'Name': 'SP1500'}, inplace=True)
+d_SP1500 = df_.to_dict('list')
+
+# make NIKKEI300 df to dict: d_NIKKEI300
+df_ = df_NIKKEI300.drop(df_NIKKEI300.columns[[1,2]], axis=1)
+df_.rename(columns={'Name': 'NIKKEI300'}, inplace=True)
+d_NIKKEI300 = df_.to_dict('list')
+
 # make HSI df to dict: d_HSI
 df_ = df_HSI.drop(df_HSI.columns[[1,2]], axis=1)
 df_.rename(columns={'Name': 'HSI'}, inplace=True)
 d_HSI = df_.to_dict('list')
-
-# make IBEX35 df to dict: d_IBEX35
-df_ = df_IBEX35.drop(df_IBEX35.columns[[1,2]], axis=1)
-df_.rename(columns={'Name': 'IBEX35'}, inplace=True)
-d_IBEX35 = df_.to_dict('list')
 
 # make SZSE df to dict: d_SZSE
 df_ = df_SZSE.drop(df_SZSE.columns[[1,2]], axis=1)
@@ -64,7 +95,7 @@ df_.rename(columns={'Name': 'SZSE'}, inplace=True)
 d_SZSE = df_.to_dict('list')
 
 # concatenate all dicts to one: all_stock_options
-all_stock_options = dict(d_Dax30, **d_CAC40, **d_FTSE100, **d_HSI, **d_IBEX35, **d_SZSE)
+all_stock_options = dict(d_Dax30, **d_AEX , **d_CAC40, **d_IBEX35, **d_FTSE100, **d_SP1500, **d_NIKKEI300,**d_HSI, **d_SZSE)
 
 #print('df_DAX30:\n', df_DAX30.head(), '\n')
 #print('ADIDAS ISIN:', df_DAX30.loc[df_DAX30['Name'] == 'ADIDAS'].iloc[0]['ISIN'])
@@ -178,7 +209,7 @@ app.layout = html.Div([
         html.Div([
             html.Div([
                 dcc.Markdown('''
-                **Risk profile:**
+                **Optimization objective:**
                 ''')
             ], style={
                 'width': '30%',
@@ -191,9 +222,9 @@ app.layout = html.Div([
                        min=0,
                        max=2,
                        marks={
-                           0: 'averse',
-                           1: 'neutral',
-                           2: 'affine'
+                           0: 'volatility',
+                           1: 'sharpe ratio',
+                           2: 'return'
                        },
                        value=1
             )], style={
@@ -248,6 +279,36 @@ app.layout = html.Div([
                 'verticalAlign': 'middle',
                 'margin': {'t': 10, 'b': 10}
             }),
+
+            html.Div([
+                html.Div([
+                    dcc.Checklist(id='portfolio_asset_AEX_activate',
+                                  options=[{'label': 'AEX', 'value': 'AEX'}])
+                ], style={
+                    'width': '30%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                }),
+                html.Div([
+                    dcc.Dropdown(id='portfolio_asset_AEX_input',
+                                 # options will be filled by callback
+                                 multi=True)
+                ], style={
+                    'width': '50%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle',
+                })
+            ], style={
+                'width': '100%',
+                'display': 'table',
+                'verticalAlign': 'middle',
+                'margin': {'t': 10, 'b': 10}
+            }),
+
             html.Div([
                 html.Div([
                     dcc.Checklist(id='portfolio_asset_CAC40_activate',
@@ -275,33 +336,7 @@ app.layout = html.Div([
                 'display': 'table',
                 'verticalAlign': 'middle'
             }),
-            html.Div([
-                html.Div([
-                    dcc.Checklist(id='portfolio_asset_FTSE100_activate',
-                                  options=[{'label': 'FTSE100', 'value': 'FTSE100'}])
-                ], style={
-                    'width': '30%',
-                    'float': 'left',
-                    'display': 'table-cell',
-                    'verticalAlign': 'middle',
-                    'horizontalAlign': 'middle'
-                }),
-                html.Div([
-                    dcc.Dropdown(id='portfolio_asset_FTSE100_input',
-                                 # options will be filled by callback
-                                 multi=True)
-                ], style={
-                    'width': '50%',
-                    'float': 'right',
-                    'display': 'table-cell',
-                    'verticalAlign': 'middle',
-                    'horizontalAlign': 'middle'
-                })
-            ], style={
-                'width': '100%',
-                'display': 'table',
-                'verticalAlign': 'middle'
-            }),
+
             html.Div([
                 html.Div([
                     dcc.Checklist(id='portfolio_asset_IBEX35_activate',
@@ -329,6 +364,91 @@ app.layout = html.Div([
                 'display': 'table',
                 'verticalAlign': 'middle'
             }),
+
+            html.Div([
+                html.Div([
+                    dcc.Checklist(id='portfolio_asset_FTSE100_activate',
+                                  options=[{'label': 'FTSE100', 'value': 'FTSE100'}])
+                ], style={
+                    'width': '30%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                }),
+                html.Div([
+                    dcc.Dropdown(id='portfolio_asset_FTSE100_input',
+                                 # options will be filled by callback
+                                 multi=True)
+                ], style={
+                    'width': '50%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                })
+            ], style={
+                'width': '100%',
+                'display': 'table',
+                'verticalAlign': 'middle'
+            }),
+
+            html.Div([
+                html.Div([
+                    dcc.Checklist(id='portfolio_asset_SP1500_activate',
+                                  options=[{'label': 'S&P1500', 'value': 'SP1500'}])
+                ], style={
+                    'width': '30%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                }),
+                html.Div([
+                    dcc.Dropdown(id='portfolio_asset_SP1500_input',
+                                 # options will be filled by callback
+                                 multi=True)
+                ], style={
+                    'width': '50%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                })
+            ], style={
+                'width': '100%',
+                'display': 'table',
+                'verticalAlign': 'middle'
+            }),
+
+            html.Div([
+                html.Div([
+                    dcc.Checklist(id='portfolio_asset_NIKKEI300_activate',
+                                  options=[{'label': 'NIKKEI300', 'value': 'NIKKEI300'}])
+                ], style={
+                    'width': '30%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                }),
+                html.Div([
+                    dcc.Dropdown(id='portfolio_asset_NIKKEI300_input',
+                                 # options will be filled by callback
+                                 multi=True)
+                ], style={
+                    'width': '50%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle',
+                    'horizontalAlign': 'middle'
+                })
+            ], style={
+                'width': '100%',
+                'display': 'table',
+                'verticalAlign': 'middle'
+            }),
+
             html.Div([
                 html.Div([
                     dcc.Checklist(id='portfolio_asset_HSI_activate',
@@ -453,39 +573,6 @@ app.layout = html.Div([
         html.Hr(style={
             'width': '99%',
             'display': 'inline-block'
-        }),
-
-        ##INPUT 6: 'portfolio_asset_split_input'
-        html.Div([
-            html.Div([
-                dcc.Markdown('''
-                    **Split shares:**
-                    ''')
-            ], style={
-               'width': '50%',
-               'float': 'left',
-               'display': 'table-cell',
-               'verticalAlign': 'middle'
-           }),
-           html.Div([
-               dcc.Slider(id='portfolio_asset_split_input',
-                          min=0,
-                          max=1,
-                          marks={
-                              0: 'No',
-                              1: 'Yes',
-                          },
-                          value=0)
-           ], style={
-               'width': '50%',
-               'float': 'right',
-               'display': 'table-cell',
-               'verticalAlign': 'middle'
-           })
-        ], style={
-            'width': '100%',
-            'display': 'table',
-            'verticalAlign': 'middle'
         }),
 
         html.Hr(style={
@@ -829,26 +916,31 @@ app.layout = html.Div([
 #3:     'portfolio_risk_input'
 #4.1.1: 'portfolio_asset_DAX30_activate'
 #4.1.2: 'portfolio_asset_DAX30_input'
-#4.2.1: 'portfolio_asset_CAC40_activate'
-#4.2.2: 'portfolio_asset_CAC40_input'
-#4.3.1: 'portfolio_asset_FTSE100_activate'
-#4.3.2: 'portfolio_asset_FTSE100_input'
+#4.2.1: 'portfolio_asset_AEX_activate'
+#4.2.2: 'portfolio_asset_AEX_input'
+#4.3.1: 'portfolio_asset_CAC40_activate'
+#4.3.2: 'portfolio_asset_CAC40_input'
 #4.4.1: 'portfolio_asset_IBEX35_activate'
 #4.4.2: 'portfolio_asset_IBEX35_input'
-#4.5.1: 'portfolio_asset_HSI_activate'
-#4.5.2: 'portfolio_asset_HSI_input'
-#4.6.1: 'portfolio_asset_SZSE_activate'
-#4.6.2: 'portfolio_asset_SZSE_input'
+#4.5.1: 'portfolio_asset_FTSE100_activate'
+#4.5.2: 'portfolio_asset_FTSE100_input'
+#4.6.1: 'portfolio_asset_SP1500_activate'
+#4.6.2: 'portfolio_asset_SP1500_input'
+#4.7.1: 'portfolio_asset_NIKKEI300_activate'
+#4.7.2: 'portfolio_asset_NIKKEI300_input'
+#4.8.1: 'portfolio_asset_HSI_activate'
+#4.8.2: 'portfolio_asset_HSI_input'
+#4.9.1: 'portfolio_asset_SZSE_activate'
+#4.9.2: 'portfolio_asset_SZSE_input'
 #5.1:   'portfolio_broker_fix_input'
 #5.2:   'portfolio_broker_var_input'
-#6:     'portfolio_asset_split_input'
-#7.1:   'portfolio_time_period_start_input'
-#7.2:   'portfolio_time_period_end_input'
-#7.3:   'portfolio_time_period_interval_input'
-#8:     'portfolio_creation_button_input'
-#9:     'portfolio_loading_button_input'
-#10:    'portfolio_rebalance_end_date_input'
-#11:    'portfolio_rebalance_button_input'
+#6.1:   'portfolio_time_period_start_input'
+#6.2:   'portfolio_time_period_end_input'
+#6.3:   'portfolio_time_period_interval_input'
+#7:     'portfolio_creation_button_input'
+#8:     'portfolio_loading_button_input'
+#9:    'portfolio_rebalance_end_date_input'
+#10:    'portfolio_rebalance_button_input'
 
 #OUTPUTS:
 #1:     'portfolio_name_output'
@@ -871,6 +963,17 @@ def set_DAX30_Dropdown(value_DAX30):
         return [{'label': '', 'value': ''}]
 # select all options in DAX_30 when DAX30 Checklist is ticked - #TODO
 
+# activate AEX Dropdown menu when AEX Checklist is ticked
+@app.callback(Output('portfolio_asset_AEX_input', 'options'),
+              [Input('portfolio_asset_AEX_activate', 'value')])
+def set_AEX_Dropdown(value_AEX):
+#    print('value_AEX:', value_AEX)
+    if value_AEX is not None and value_AEX:
+        return [{'label': i, 'value': i} for i in all_stock_options[value_AEX[0]]]
+    else:
+        return [{'label': '', 'value': ''}]
+# select all options in AEX when AEX Checklist is ticked - #TODO
+
 # activate CAC40 Dropdown menu when CAC40 Checklist is ticked
 @app.callback(Output('portfolio_asset_CAC40_input', 'options'),
               [Input('portfolio_asset_CAC40_activate', 'value')])
@@ -880,6 +983,16 @@ def set_CAC40_Dropdown(value_CAC40):
     else:
         return [{'label': '', 'value': ''}]
 # select all options in CAC_40 when CAC40 Checklist is ticked - #TODO
+
+# activate IBEX35 Dropdown menu when IBEX35 Checklist is ticked
+@app.callback(Output('portfolio_asset_IBEX35_input', 'options'),
+              [Input('portfolio_asset_IBEX35_activate', 'value')])
+def set_IBEX35_Dropdown(value_IBEX35):
+    if value_IBEX35 is not None and value_IBEX35:
+        return [{'label': i, 'value': i} for i in all_stock_options[value_IBEX35[0]]]
+    else:
+        return [{'label': '', 'value': ''}]
+# select all options in IBEX_35 when IBEX35 Checklist is ticked - #TODO
 
 # activate FTSE100 Dropdown menu when FTSE100 Checklist is ticked
 @app.callback(Output('portfolio_asset_FTSE100_input', 'options'),
@@ -891,16 +1004,25 @@ def set_FTSE100_Dropdown(value_FTSE100):
         return [{'label': '', 'value': ''}]
 # select all options in FTSE_100 when FTSE100 Checklist is ticked - #TODO
 
-
-# activate IBEX35 Dropdown menu when IBEX35 Checklist is ticked
-@app.callback(Output('portfolio_asset_IBEX35_input', 'options'),
-              [Input('portfolio_asset_IBEX35_activate', 'value')])
-def set_IBEX35_Dropdown(value_IBEX35):
-    if value_IBEX35 is not None and value_IBEX35:
-        return [{'label': i, 'value': i} for i in all_stock_options[value_IBEX35[0]]]
+# activate SP1500 Dropdown menu when SP1500 Checklist is ticked
+@app.callback(Output('portfolio_asset_SP1500_input', 'options'),
+              [Input('portfolio_asset_SP1500_activate', 'value')])
+def set_SP1500_Dropdown(value_SP1500):
+    if value_SP1500 is not None and value_SP1500:
+        return [{'label': i, 'value': i} for i in all_stock_options[value_SP1500[0]]]
     else:
         return [{'label': '', 'value': ''}]
-# select all options in IBEX_35 when IBEX35 Checklist is ticked - #TODO
+# select all options in SP1500 when SP1500 Checklist is ticked - #TODO
+
+# activate NIKKEI300 Dropdown menu when NIKKEI300 Checklist is ticked
+@app.callback(Output('portfolio_asset_NIKKEI300_input', 'options'),
+              [Input('portfolio_asset_NIKKEI300_activate', 'value')])
+def set_NIKKEI300_Dropdown(value_NIKKEI300):
+    if value_NIKKEI300 is not None and value_NIKKEI300:
+        return [{'label': i, 'value': i} for i in all_stock_options[value_NIKKEI300[0]]]
+    else:
+        return [{'label': '', 'value': ''}]
+# select all options in NIKKEI300 when NIKKEI300 Checklist is ticked - #TODO
 
 # activate HSI Dropdown menu when HSI Checklist is ticked
 @app.callback(Output('portfolio_asset_HSI_input', 'options'),
@@ -938,14 +1060,16 @@ def set_SZSE_Dropdown(value_SZSE):
                State('portfolio_amount_input', 'value'),
                State('portfolio_risk_input', 'value'),
                State('portfolio_asset_DAX30_input', 'value'),
+               State('portfolio_asset_AEX_input', 'value'),
                State('portfolio_asset_CAC40_input', 'value'),
-               State('portfolio_asset_FTSE100_input', 'value'),
                State('portfolio_asset_IBEX35_input', 'value'),
+               State('portfolio_asset_FTSE100_input', 'value'),
+               State('portfolio_asset_SP1500_input', 'value'),
+               State('portfolio_asset_NIKKEI300_input', 'value'),
                State('portfolio_asset_HSI_input', 'value'),
                State('portfolio_asset_SZSE_input', 'value'),
                State('portfolio_broker_fix_input', 'value'),
                State('portfolio_broker_var_input', 'value'),
-               State('portfolio_asset_split_input', 'value'),
                State('portfolio_time_period_start_input', 'date'),
                State('portfolio_time_period_end_input', 'date'),
                State('portfolio_time_period_interval_input', 'value'),
@@ -957,14 +1081,16 @@ def create_load_rebalance_portfolio(n_clicks_create,
                                     portfolio_amount_input,
                                     portfolio_risk_input,
                                     portfolio_asset_DAX30_input,
+                                    portfolio_asset_AEX_input,
                                     portfolio_asset_CAC40_input,
-                                    portfolio_asset_FTSE100_input,
                                     portfolio_asset_IBEX35_input,
+                                    portfolio_asset_FTSE100_input,
+                                    portfolio_asset_SP1500_input,
+                                    portfolio_asset_NIKKEI300_input,
                                     portfolio_asset_HSI_input,
                                     portfolio_asset_SZSE_input,
                                     portfolio_broker_fix_input,
                                     portfolio_broker_var_input,
-                                    portfolio_asset_split_input,
                                     portfolio_time_period_start_input,
                                     portfolio_time_period_end_input,
                                     portfolio_time_period_interval_input,
@@ -994,9 +1120,12 @@ def create_load_rebalance_portfolio(n_clicks_create,
 
         #prepare input for optimization procedure
         ISIN_list = get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
+                                                portfolio_asset_AEX_input,
                                                 portfolio_asset_CAC40_input,
-                                                portfolio_asset_FTSE100_input,
                                                 portfolio_asset_IBEX35_input,
+                                                portfolio_asset_FTSE100_input,
+                                                portfolio_asset_SP1500_input,
+                                                portfolio_asset_NIKKEI300_input,
                                                 portfolio_asset_HSI_input,
                                                 portfolio_asset_SZSE_input)
 
@@ -1023,7 +1152,6 @@ def create_load_rebalance_portfolio(n_clicks_create,
             broker_var = int(portfolio_broker_var_input)
         else:
             broker_var = 0
-        split_shares = get_split_share_boolean(portfolio_asset_split_input)
 
         #create user to be optimized
         user = u.User(portfolio_name_input,
@@ -1033,8 +1161,7 @@ def create_load_rebalance_portfolio(n_clicks_create,
                       optimize_objective=optimize_objective,
                       period_start=period_start,
                       broker_fix=broker_fix,
-                      broker_var=broker_var,
-                      split_shares=split_shares)
+                      broker_var=broker_var)
 
         #start optimization procedure
         user.optimize_req(period_end=period_end)
@@ -1152,11 +1279,14 @@ def update_portfolio_name(portfolio_name_input):
         return '''{}'''.format(portfolio_name_input)
 
 def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
-                                              portfolio_asset_CAC40_input,
-                                              portfolio_asset_FTSE100_input,
-                                              portfolio_asset_IBEX35_input,
-                                              portfolio_asset_HSI_input,
-                                              portfolio_asset_SZSE_input):
+                                portfolio_asset_AEX_input,
+                                portfolio_asset_CAC40_input,
+                                portfolio_asset_IBEX35_input,
+                                portfolio_asset_FTSE100_input,
+                                portfolio_asset_SP1500_input,
+                                portfolio_asset_NIKKEI300_input,
+                                portfolio_asset_HSI_input,
+                                portfolio_asset_SZSE_input):
     isin_list = []
 
     if portfolio_asset_DAX30_input is not None:
@@ -1165,10 +1295,22 @@ def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
                 isin = df_DAX30.loc[df_DAX30['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
+    if portfolio_asset_AEX_input is not None:
+        for x in portfolio_asset_AEX_input:
+            if x in df_AEX.Name.values:
+                isin = df_AEX.loc[df_AEX['Name'] == x].iloc[0]['ISIN']
+                isin_list.append(isin)
+
     if portfolio_asset_CAC40_input is not None:
         for x in portfolio_asset_CAC40_input:
             if x in df_CAC40.Name.values:
                 isin = df_CAC40.loc[df_CAC40['Name'] == x].iloc[0]['ISIN']
+                isin_list.append(isin)
+
+    if portfolio_asset_IBEX35_input is not None:
+        for x in portfolio_asset_IBEX35_input:
+            if x in df_IBEX35.Name.values:
+                isin = df_IBEX35.loc[df_IBEX35['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_FTSE100_input is not None:
@@ -1177,10 +1319,16 @@ def get_asset_isin_to_name_list(portfolio_asset_DAX30_input,
                 isin = df_FTSE100.loc[df_FTSE100['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
-    if portfolio_asset_IBEX35_input is not None:
-        for x in portfolio_asset_IBEX35_input:
-            if x in df_IBEX35.Name.values:
-                isin = df_IBEX35.loc[df_IBEX35['Name'] == x].iloc[0]['ISIN']
+    if portfolio_asset_SP1500_input is not None:
+        for x in portfolio_asset_SP1500_input:
+            if x in df_SP1500.Name.values:
+                isin = df_SP1500.loc[df_SP1500['Name'] == x].iloc[0]['ISIN']
+                isin_list.append(isin)
+
+    if portfolio_asset_NIKKEI300_input is not None:
+        for x in portfolio_asset_NIKKEI300_input:
+            if x in df_NIKKEI300.Name.values:
+                isin = df_NIKKEI300.loc[df_NIKKEI300['Name'] == x].iloc[0]['ISIN']
                 isin_list.append(isin)
 
     if portfolio_asset_HSI_input is not None:
@@ -1204,14 +1352,23 @@ def get_asset_name_to_isin_list(isin):
        if isin in df_DAX30.ISIN.values:
            name = df_DAX30.loc[df_DAX30['ISIN'] == isin].iloc[0]['Name']
 
+       if isin in df_AEX.ISIN.values:
+           name = df_AEX.loc[df_AEX['ISIN'] == isin].iloc[0]['Name']
+
        elif isin in df_CAC40.ISIN.values:
            name = df_CAC40.loc[df_CAC40['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_IBEX35.ISIN.values:
+           name = df_IBEX35.loc[df_IBEX35['ISIN'] == isin].iloc[0]['Name']
 
        elif isin in df_FTSE100.ISIN.values:
            name = df_FTSE100.loc[df_FTSE100['ISIN'] == isin].iloc[0]['Name']
 
-       elif isin in df_IBEX35.ISIN.values:
-           name = df_IBEX35.loc[df_IBEX35['ISIN'] == isin].iloc[0]['Name']
+       elif isin in df_SP1500.ISIN.values:
+           name = df_SP1500.loc[df_SP1500['ISIN'] == isin].iloc[0]['Name']
+
+       elif isin in df_NIKKEI300.ISIN.values:
+           name = df_NIKKEI300.loc[df_NIKKEI300['ISIN'] == isin].iloc[0]['Name']
 
        elif isin in df_HSI.ISIN.values:
            name = df_HSI.loc[df_HSI['ISIN'] == isin].iloc[0]['Name']
@@ -1229,12 +1386,6 @@ def get_optimize_objective_char(portfolio_risk_input):
         1: 'r',
         2: 's'
     }[portfolio_risk_input]
-
-def get_split_share_boolean(portfolio_asset_split_input):
-    return {
-        0: False,
-        1: True
-    }[portfolio_asset_split_input]
 
 def get_time_interval_char(portfolio_time_period_interval_input):
     return {
@@ -1264,7 +1415,7 @@ def construct_graph(user):
             base_date_index = i
             break
 
-    print('MESSAGE: Graph is being constructed (1/2)')
+    print('MESSAGE: Portfolio graph is being constructed (1/2)')
     for i, row in df_acp.iloc[1:].iterrows():
         if i == 0 or row.isnull().any():
             continue
@@ -1287,50 +1438,95 @@ def construct_graph(user):
 
     df_graph = pd.DataFrame({'date': x_values, 'portfolio return': y_values})
     base_date = df_acp.iloc[base_date_index][0].strftime('%d.%m.%Y')
-    print('MESSAGE: Graph is being constructed (2/2)')
-    return df_graph, base_date
+    print('MESSAGE: Portfolio graph is being constructed (2/2)')
 
-def construct_figure(base_date, user_period_end, df_graph):
+    #only plot DAX graph if user.period_start is later than 2005-01-13
+    dt_period_start = dt.strptime(user.period_start, '%Y-%m-%d')
+    dt_first_DAX_date = dt.strptime('2005-01-13', '%Y-%m-%d')
+    if dt_period_start < dt_first_DAX_date:
+        return df_graph, base_date
+    else:
+        #obtain DAX index get_acp (returns)
+        df_DAX_acp = sql_handler.getACP(user.period_start, '2019-11-22', ['DE0008469008'])
+        df_DAX_acp.insert(0, 'date', df_DAX_acp.index)
+        df_DAX_acp.reset_index(inplace = True, drop = True)
+        DAX_x_values = []
+        DAX_y_values = []
+
+        print('MESSAGE: DAX graph is being constructed (1/2)')
+        print('DAX base price {}:'.format(df_DAX_acp.iloc[base_date_index][0]), df_DAX_acp.iloc[base_date_index][1])
+        i_ctr = 1
+        for i, row in df_DAX_acp.iloc[1:].iterrows():
+            if i == 0 or row.isnull().any():
+                continue
+            # for each date i, get return of relative to base_date
+            y = ((df_DAX_acp.iloc[i][1] - df_DAX_acp.iloc[base_date_index][1]) / df_DAX_acp.iloc[base_date_index][
+                    1]) * 100
+            # append DAX return (y) to DAX_y_values
+            DAX_y_values.append(y)
+            # append date i to DAX_x_values
+            DAX_x_values.append(df_acp.iloc[i][0])
+            i_ctr = i
+
+        df_DAX_graph = pd.DataFrame({'date': DAX_x_values, 'DAX return': DAX_y_values})
+        print('MESSAGE: DAX graph is being constructed (2/2)')
+        print('DAX end price {}:'.format(df_DAX_acp.iloc[i_ctr][0]), df_DAX_acp.iloc[i_ctr][1] )
+
+        return df_graph, base_date, df_DAX_graph
+
+def construct_figure(base_date, user_period_end, df_graph, df_DAX30_graph):
     # construct scatterplot from df_graph: x_values (date) and y_values (portfolio return)
     x_values = df_graph['date'].tolist()
     y_values = df_graph['portfolio return'].tolist()
 
-    figure = go.Figure(
-        data=go.Scatter(
-            x=x_values,
-            y=y_values,
-            hoverinfo='x,y'
-        ),
-        layout=go.Layout(
-            title='Portfolio Return since {} [%]'.format(base_date),
-            plot_bgcolor='#ffffff',  # f4f4f4 (light grey)
-            paper_bgcolor='#ffffff',  # f4f4f4 (light grey)
-            xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
-            yaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
-            margin = dict(t=80),
-            shapes=[
-                dict(
-                    type='rect',
-                    xref='x',
-                    yref='paper',
-                    x0=user_period_end,
-                    y0=0,
-                    x1='2019-11-22',
-                    y1=1,
-                    fillcolor='#fafafa',
-                    opacity=0.8,
-                    layer='below',
-                    line_width=0
-                )
-            ]
-        )
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x = x_values,
+        y = y_values,
+        name = 'Portfolio'
+    ))
+
+    if df_DAX30_graph is not None:
+    # construct scatterplot from df_DAX30_graph: x_values (date) and y_values (DAX30 return)
+        DAX30_x_values = df_DAX30_graph['date'].tolist()
+        DAX30_y_values = df_DAX30_graph['DAX return'].tolist()
+        fig.add_trace(go.Scatter(
+            x=DAX30_x_values,
+            y=DAX30_y_values,
+            name='DAX'
+        ))
+
+    fig.update_layout(
+        title='Portfolio Return since {} [%]'.format(base_date),
+        plot_bgcolor='#ffffff',  # f4f4f4 (light grey)
+        paper_bgcolor='#ffffff',  # f4f4f4 (light grey)
+        xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
+        yaxis=dict(showgrid=True, gridwidth=1, gridcolor='#f4f4f4'),
+        margin=dict(t=80),
+        shapes=[
+            dict(
+                type='rect',
+                xref='x',
+                yref='paper',
+                x0=user_period_end,
+                y0=0,
+                x1='2019-11-22',
+                y1=1,
+                fillcolor='#fafafa',
+                opacity=0.8,
+                layer='below',
+                line_width=0
+            )
+        ]
     )
-    return figure
+
+    return fig
 
 def get_portfolio_result(user):
     procedure = user.req_history[-1][1]
     s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
-    r = 'Total return: {:.2f}'.format(procedure.total_return)
+    r = 'Total return: {:.2f}%'.format(procedure.total_return)
     std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
 
     #modify copy of gui_weights: round results, add share name and ISIN column and rename columns properly
@@ -1353,8 +1549,11 @@ def get_portfolio_result(user):
     df_graph = construct_graph_result[0]
     base_date_graph = construct_graph_result[1]
     user_period_end = user.req_history[-1][0].period_end #for highlighting grey plot area (period end - now)
-    print('perdiod end:', user_period_end)
-    figure = construct_figure(base_date_graph, user_period_end, df_graph)
+    if len(construct_graph_result) > 2: #DAX graph has been added
+        df_DAX_graph = construct_graph_result[2]
+        figure = construct_figure(base_date_graph, user_period_end, df_graph, df_DAX_graph)
+    else:
+        figure = construct_figure(base_date_graph, user_period_end, df_graph, None)
 
     #construct table with weights
     data = portfolio_table_output.to_dict('records')
