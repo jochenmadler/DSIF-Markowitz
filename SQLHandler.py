@@ -672,7 +672,7 @@ def getUserList():
     start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
-    command = """select * from tableusers;"""
+    command = """select userId from tableusers;"""
     cur.execute(command)
     con.commit()
     cur.close()
