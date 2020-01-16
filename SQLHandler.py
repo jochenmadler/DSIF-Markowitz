@@ -19,7 +19,7 @@ import psycopg2
 import User as us
 import OptimizeProcedure as op
 from django.db import transaction
-
+import numpy
 
 name = "Alex"
 database = "dsif"
@@ -120,8 +120,98 @@ def setUp(name):
         directory9 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SP1500NEW.txt"
         directory10 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DaxIndex.txt"
 
-    #remove all old relations
     clean()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+    """
+    #create company realtion
+    command = '''create table companies
+        (name varchar (80),
+        isin varchar (80),
+        dscd varchar (80),
+        index varchar (80))
+    '''
+    cur.execute(command)
+    con.commit()
+    """
+    # create the user realtion
+    command = '''create table tableUsers
+        (userID varchar (80) primary key,
+        budget float8,
+        initialBudget float8,
+        varBroker integer,
+        fixBroker integer,
+        split bool,
+        periodStart date,
+        timeInterval char (1),
+        optimizeObjective char (1));
+        '''
+    cur.execute(command)
+    con.commit()
+
+    # create the optimize request realtion
+    command = '''create table request
+        (userID varchar (80),
+        requestID varchar (80),
+        periodEnd date,
+        primary key (userID, requestID),
+        foreign key (userID) references tableUsers (userID) on delete cascade);
+        '''
+    cur.execute(command)
+    con.commit()
+
+    # create the relation of isin_list for each user
+    command = '''create table isinList
+            (userID varchar (80),
+            isin varchar (80),
+            position integer,
+            primary key (userID , isin),
+            foreign key (userID) references tableUsers (userID) on delete cascade);
+            '''
+    cur.execute(command)
+    con.commit()
+
+    # create table results
+    command = '''create table result
+                    (requestID varchar (80) ,
+                    userID varchar (80) ,
+                    sharpeRatio float8,
+                    totalVolatility float8,
+                    totalReturn float8,
+                    transactionCost float8,
+                    currentCapital float8, 
+                    primary key (requestID, userID),
+                    foreign key (userID) references tableUsers (userID) on delete cascade);
+                    '''
+    cur.execute(command)
+    con.commit()
+
+    command = '''create table secweights
+                    (requestID varchar (80),
+                    userID varchar (80),
+                    weight float8,
+                    isin varchar (80),
+                    postion integer,
+                    primary key (requestID, isin, userID),
+                    foreign key (userID) references tableUsers (userID) on delete cascade);
+                    '''
+    cur.execute(command)
+    con.commit()
+
+    command = '''create table guiweights
+                        (requestID varchar (80),
+                        userID varchar (80),
+                        isin varchar (80),
+                        percent float8,
+                        amount float8,
+                        primary key (isin, requestID, userID),
+                        foreign key (userID) references tableUsers (userID) on delete cascade);
+                        '''
+    cur.execute(command)
+    con.commit()
+    cur.close()
+
+
     inTable()
     print("First import done of")
     print(directory)
@@ -161,86 +251,6 @@ def setUp(name):
     inTable()
     print("Tenth import done of")
     print(directory)
-
-    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-    cur = con.cursor()
-
-    #create the user realtion
-    command = '''create table tableUsers
-    (userID varchar (80) primary key,
-    budget float8,
-    initialBudget float8,
-    varBroker integer,
-    fixBroker integer,
-    split bool,
-    periodStart date,
-    timeInterval char (1),
-    optimizeObjective char (1));
-    '''
-    cur.execute(command)
-    con.commit()
-
-    #create the optimize request realtion
-    command = '''create table request
-    (userID varchar (80),
-    requestID varchar (80),
-    periodEnd date,
-    primary key (userID, requestID),
-    foreign key (userID) references tableUsers (userID) on delete cascade);
-    '''
-    cur.execute(command)
-    con.commit()
-
-    #create the relation of isin_list for each user
-    command = '''create table isinList
-        (userID varchar (80),
-        isin varchar (80),
-        position integer,
-        primary key (userID , isin),
-        foreign key (userID) references tableUsers (userID) on delete cascade);
-        '''
-    cur.execute(command)
-    con.commit()
-
-    #create table results
-    command = '''create table result
-                (requestID varchar (80) ,
-                userID varchar (80) ,
-                sharpeRatio float8,
-                totalVolatility float8,
-                totalReturn float8,
-                transactionCost float8,
-                currentCapital float8, 
-                primary key (requestID, userID),
-                foreign key (userID) references tableUsers (userID) on delete cascade);
-                '''
-    cur.execute(command)
-    con.commit()
-
-    command = '''create table secweights
-                (requestID varchar (80),
-                userID varchar (80),
-                weight float8,
-                isin varchar (80),
-                postion integer,
-                primary key (requestID, isin, userID),
-                foreign key (userID) references tableUsers (userID) on delete cascade);
-                '''
-    cur.execute(command)
-    con.commit()
-
-    command = '''create table guiweights
-                    (requestID varchar (80),
-                    userID varchar (80),
-                    isin varchar (80),
-                    percent float8,
-                    amount float8,
-                    primary key (isin, requestID, userID),
-                    foreign key (userID) references tableUsers (userID) on delete cascade);
-                    '''
-    cur.execute(command)
-    con.commit()
-    cur.close()
     print ("SetUp success")
     exit(0)
 
@@ -298,7 +308,7 @@ def getACP (startDate, endDate, comps):
     compsStr = "','".join([comp.upper() for comp in comps])
 
     command = '''
-            select distinct *
+            select *
             from acp
             where isin in ('{}') and date between '{}' and '{}';
             '''.format(compsStr, startDate, endDate)
@@ -313,8 +323,12 @@ def getACP (startDate, endDate, comps):
     result = cur.fetchall()
     cur.close()
     result = pd.DataFrame(result)
-    #set the column names
-    result.columns = ['isin','date','acp']
+    # set the column names
+    result.columns = ['isin', 'date', 'acp']
+    # remove duplicates
+    dup = result.duplicated( subset=['isin', 'date'], keep='first')
+    dup = numpy.logical_not(dup)
+    result = result[dup]
     #long to wide
     result = result.pivot(index= 'date', columns= 'isin', values='acp')
     return result
@@ -640,3 +654,27 @@ def deleteUserByName(id):
     cur.execute(command)
     con.commit()
     cur.close()
+
+def dropDuplicates():
+    start()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+    #command = '''delete from acp a using acp b where a.date = b.date and a.isin = b.isin and a.acp >= b.acp;'''
+    command = '''delete from acp where isin in (select isin from companies group by isin having count(isin) >1 order by isin);'''
+    cur.execute(command)
+    con.commit()
+    command = '''delete from companies where isin in (select isin from companies group by isin having count(isin) >1 order by isin);'''
+    cur.execute(command)
+    con.commit()
+    cur.close()
+
+def getUserList():
+    start()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+    command = """select * from tableusers;"""
+    cur.execute(command)
+    con.commit()
+    cur.close()
+    result = pd.DataFrame(cur.fetchall())
+    return result
