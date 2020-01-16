@@ -326,9 +326,9 @@ def getACP (startDate, endDate, comps):
     # set the column names
     result.columns = ['isin', 'date', 'acp']
     # remove duplicates
-    dup = result.duplicated( subset=['isin', 'date'], keep='first')
-    dup = numpy.logical_not(dup)
-    result = result[dup]
+    #dup = result.duplicated( subset=['isin', 'date'], keep='first')
+    #dup = numpy.logical_not(dup)
+    #result = result[dup]
     #long to wide
     result = result.pivot(index= 'date', columns= 'isin', values='acp')
     return result
