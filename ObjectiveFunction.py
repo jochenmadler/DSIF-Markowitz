@@ -40,9 +40,12 @@ class objFunction_basicTrans(objFunction):
         #return_df =  pd.read_excel("AUS_testData.xlsx", sheet_name = "Tabelle1")
         #------------------------------------------------------------------------
 
-        # get the covariance matrix and scale it up
+        # get the covariance matrix and scale it up to yearly
         cov_Mat = return_df.cov()
-        cov_Mat = cov_Mat.multiply(10000)
+        if optimizeProcedure.optimize_request.user.time_interval == "m":
+            cov_Mat = cov_Mat.multiply(10000 * 12)
+        elif optimizeProcedure.optimize_request.user.time_interval == "d":
+            cov_Mat = cov_Mat.multiply(10000 * 30 * 12)
 
         # get the total variance -> sum(covariance(A-B) * weight A * weight B)
         total_cov = np.dot(np.dot(cov_Mat, port_weights), port_weights.T)
@@ -50,8 +53,12 @@ class objFunction_basicTrans(objFunction):
         # convert variance into stddev
         port_vol = np.sqrt(total_cov)
 
-        # calculate return mean for each column
+        # calculate return mean for each column and scale it up
         avg_returns = return_df[dataSource.ISIN_list].mean()
+        if optimizeProcedure.optimize_request.user.time_interval == "m":
+            avg_returns = (avg_returns + 1)**12 - 1
+        elif optimizeProcedure.optimize_request.user.time_interval == "d":
+            avg_returns = (avg_returns + 1)**(12*30) - 1
 
         # calculate total portfolio return based on weights
         port_return = np.sum(avg_returns * port_weights)
@@ -81,10 +88,10 @@ class objFunction_basicTrans(objFunction):
         absolute_return = absolute_return - total_transaction_cost
 
         # calculate % return including transaction cost
-        port_return = absolute_return / optimizeProcedure.optimize_request.user.budget
+        port_return = (absolute_return / optimizeProcedure.optimize_request.user.budget)*100
 
         # calculate sharpe ratio
-        port_shr = port_return*100 / port_vol
+        port_shr = port_return / port_vol
 
         # save results in resultPortfolio, otherwise they would get lost
         if optimizeProcedure.optimize_request.user.optimize_objective == "s":
