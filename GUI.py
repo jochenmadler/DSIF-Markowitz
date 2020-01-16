@@ -1383,8 +1383,8 @@ def get_asset_name_to_isin_list(isin):
 def get_optimize_objective_char(portfolio_risk_input):
     return {
         0: 'v',
-        1: 'r',
-        2: 's'
+        1: 's',
+        2: 'r'
     }[portfolio_risk_input]
 
 def get_time_interval_char(portfolio_time_period_interval_input):
@@ -1454,7 +1454,6 @@ def construct_graph(user):
         DAX_y_values = []
 
         print('MESSAGE: DAX graph is being constructed (1/2)')
-        print('DAX base price {}:'.format(df_DAX_acp.iloc[base_date_index][0]), df_DAX_acp.iloc[base_date_index][1])
         i_ctr = 1
         for i, row in df_DAX_acp.iloc[1:].iterrows():
             if i == 0 or row.isnull().any():
@@ -1470,7 +1469,6 @@ def construct_graph(user):
 
         df_DAX_graph = pd.DataFrame({'date': DAX_x_values, 'DAX return': DAX_y_values})
         print('MESSAGE: DAX graph is being constructed (2/2)')
-        print('DAX end price {}:'.format(df_DAX_acp.iloc[i_ctr][0]), df_DAX_acp.iloc[i_ctr][1] )
 
         return df_graph, base_date, df_DAX_graph
 
