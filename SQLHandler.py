@@ -675,6 +675,6 @@ def getUserList():
     command = """select userId from tableusers;"""
     cur.execute(command)
     con.commit()
-    cur.close()
     result = pd.DataFrame(cur.fetchall())
+    cur.close()
     return result
