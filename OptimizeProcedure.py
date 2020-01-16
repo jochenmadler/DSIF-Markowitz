@@ -21,12 +21,13 @@ class optimizeData:
     #current_prices = None
     return_df = None
 
-    def __init__(self, data, time_interval = 'd'):
+    def __init__(self, data, time_interval):
 
         #ToDO:implement conversion to monthly data (test)
         if time_interval == 'm':
             data.index = pd.to_datetime(data.index)
-            data.resample('1M').max()
+            data_res = data.resample('1M').max()
+            data = data_res
 
         #ToDo:implement handling von NAs in data (zurückgestellt)
         #if data.isnull().values.any():
@@ -73,7 +74,7 @@ class optimizeProcedure():
         self.optimize_request = optimize_request
 
         raw_data = sh.getACP(optimize_request.user.period_start, optimize_request.period_end, optimize_request.user.ISIN_list)
-        self.optimize_data = optimizeData(raw_data)
+        self.optimize_data = optimizeData(raw_data, optimize_request.user.time_interval)
 
         # add different objFunctions here
         self.obj_function = of.objFunction_basicTrans()
