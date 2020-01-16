@@ -241,6 +241,7 @@ def setUp(name):
     cur.execute(command)
     con.commit()
     cur.close()
+    print ("SetUp success")
     exit(0)
 
 def inTable():
