@@ -26,7 +26,7 @@ class optimizeData:
         #ToDO:implement conversion to monthly data (test)
         if time_interval == 'm':
             data.index = pd.to_datetime(data.index)
-            data_res = data.resample('1M').max()
+            data_res = data.resample('1M').last()
             data = data_res
 
         #ToDo:implement handling von NAs in data (zurückgestellt)
