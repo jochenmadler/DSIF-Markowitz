@@ -119,6 +119,7 @@ class optimizeProcedure():
         )
 
         # update current budget after optimizing
+        self.generate_guioutput()
         self.optimize_request.user.budget = self.optimize_request.user.budget * (self.optimize_result.total_return/100 + 1)
         self.optimize_result.current_capital = self.optimize_request.user.budget
 
