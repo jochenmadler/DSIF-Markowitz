@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 # import function to call data from Alex' SQLHandler
 import SQLHandler as sql_handler
 #sql_handler.deleteAllUsers()
-userList = sql_handler.getUserList()[0].tolist()
+userList = sql_handler.getUserList()
 print('MESSAGE: User list:', userList)
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure

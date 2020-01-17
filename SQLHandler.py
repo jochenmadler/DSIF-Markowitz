@@ -688,7 +688,9 @@ def getUserList():
     con.commit()
     result = pd.DataFrame(cur.fetchall())
     cur.close()
-    return result
+    if result.empty:
+        return []
+    return result[0].tolist()
 
 def deleteDup ():
     """"
