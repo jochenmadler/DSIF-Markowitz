@@ -1,4 +1,4 @@
-# Version 1.0.9
+# Version 1.1.1
 import json
 import dash
 import dash_table
@@ -14,6 +14,8 @@ import plotly.graph_objects as go
 # import function to call data from Alex' SQLHandler
 import SQLHandler as sql_handler
 #sql_handler.deleteAllUsers()
+userList = sql_handler.getUserList()[0].tolist()
+print('MESSAGE: User list:', userList)
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
@@ -150,13 +152,14 @@ app.layout = html.Div([
                 dcc.Input(id='portfolio_name_input',
                           type='text',
                           placeholder='Max Mustermann',
-                          )
+                          ),
+
             ], style={
                 'width': '50%',
                 'float': 'right',
                 'display': 'table-cell',
                 'verticalAlign': 'middle'
-            })
+            }),
         ], style={
             'width': '100%',
             'display': 'table',
@@ -568,11 +571,6 @@ app.layout = html.Div([
             'width': '100%',
             'display': 'table',
             'verticalAlign': 'middle'
-        }),
-
-        html.Hr(style={
-            'width': '99%',
-            'display': 'inline-block'
         }),
 
         html.Hr(style={
@@ -1511,7 +1509,7 @@ def construct_figure(base_date, user_period_end, df_graph, df_DAX30_graph):
                 y0=0,
                 x1='2019-11-22',
                 y1=1,
-                fillcolor='#fafafa',
+                fillcolor='#f5f5f5',
                 opacity=0.8,
                 layer='below',
                 line_width=0
@@ -1524,7 +1522,7 @@ def construct_figure(base_date, user_period_end, df_graph, df_DAX30_graph):
 def get_portfolio_result(user):
     procedure = user.req_history[-1][1]
     s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
-    r = 'Total return: {:.2f}%'.format(procedure.total_return)
+    r = 'Exp. return: {:.2f}% p.a.'.format(procedure.total_return)
     std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
 
     #modify copy of gui_weights: round results, add share name and ISIN column and rename columns properly
