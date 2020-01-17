@@ -122,6 +122,7 @@ class optimizeProcedure():
         self.optimize_result.current_capital = self.optimize_request.user.budget
 
     def generate_guioutput(self):
+        print('')
         gui_weights = pd.DataFrame(columns=['percent_portfolio', 'amount_eur'], index = self.optimize_data.ISIN_list)
         test = self.optimize_result.security_weights.values
         gui_weights["percent_portfolio"] = self.optimize_result.security_weights.values[0]
