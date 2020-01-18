@@ -1,4 +1,4 @@
-# Version 1.1.1
+# Version 1.1.3
 import json
 import dash
 import dash_table
@@ -15,7 +15,10 @@ import plotly.graph_objects as go
 import SQLHandler as sql_handler
 #sql_handler.deleteAllUsers()
 userList = sql_handler.getUserList()
-print('MESSAGE: User list:', userList)
+if userList:
+    print('MESSAGE: User list:', userList)
+else:
+    print('MESSAGE: User list: []')
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
@@ -547,7 +550,7 @@ app.layout = html.Div([
                                   type='number',
                                   min=0,
                                   max=100,
-                                  step=0.1,
+                                  step=1,
                                   placeholder='variable',
                                   )
                     ], style={
@@ -740,7 +743,7 @@ app.layout = html.Div([
         }),
 
         html.Div(
-            ##OUTPUT 7: 'portfolio_rebalance_popup_container': hidden by default
+            ##OUTPUT 12: 'portfolio_rebalance_popup_container': hidden by default
             id='portfolio_rebalance_popup_container',
             style={
                 'display': 'none' #will be set to 'block' (activated) in callback
@@ -847,7 +850,7 @@ app.layout = html.Div([
                     'verticalAlign': 'middle'
                 }
             ),
-            ##OUTPUT 3: 'portfolio_std_output'
+            ##OUTPUT 4: 'portfolio_std_output'
             html.Div(
                 id='portfolio_std_output',
                 style={
@@ -864,22 +867,93 @@ app.layout = html.Div([
         }),
 
         html.Hr(style={
+            'width': '90%',
+            'display': 'inline-block',
+            'horizontalAlign': 'middle'
+        }),
+
+        html.Div([
+            ##OUTPUT 5: 'portfolio_fixed_tc_output'
+            html.Div(
+                id='portfolio_fixed_tc_output',
+                style={
+                    'width': '45%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            ),
+            ##OUTPUT 6: 'portfolio_variable_tc_output'
+            html.Div(
+                id='portfolio_variable_tc_output',
+                style={
+                    'width': '20%',
+                    'float': 'middle',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            ),
+            ##OUTPUT 7: 'portfolio_total_tc_output'
+            html.Div(
+                id='portfolio_total_tc_output',
+                style={
+                    'width': '45%',
+                    'float': 'right',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            )
+        ], style={
+            'width': '99%',
+            'display': 'table',
+            'verticalAlign': 'middle'
+        }),
+
+        html.Hr(style={
+            'width': '90%',
+            'display': 'inline-block',
+            'horizontalAlign': 'middle'
+        }),
+
+        html.Div([
+            ##OUTPUT 8: 'portfolio_initial_budget_output'
+            html.Div(
+                id='portfolio_initial_budget_output',
+                style={
+                    'width': '50%',
+                    'float': 'left',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            ),
+            ##OUTPUT 9: 'portfolio_current_budget_output'
+            html.Div(
+                id='portfolio_current_budget_output',
+                style={
+                    'width': '50%',
+                    'float': 'middle',
+                    'display': 'table-cell',
+                    'verticalAlign': 'middle'
+                }
+            ),
+        ], style={
+            'width': '76%',
+            'display': 'table',
+            'verticalAlign': 'middle',
+            'float': 'left'
+        }),
+
+        html.Hr(style={
             'width': '99%',
             'display': 'inline-block'
         }),
 
-        ##OUTPUT 5: 'portfolio_graph_output'
+        ##OUTPUT 10: 'portfolio_graph_output'
         html.Div([
             dcc.Graph(id='portfolio_graph_output')
         ]),
 
-
-        #html.Hr(style={
-        #    'width': '99%',
-        #    'display': 'inline-block'
-        #}),
-
-        ##OUTPUT 6: 'portfolio_table_output'
+        ##OUTPUT 11: 'portfolio_table_output'
         html.Div([
             dash_table.DataTable(
                 id='portfolio_table_output',
@@ -893,7 +967,12 @@ app.layout = html.Div([
                             'fontSize':14,
                             'font-family': 'sans-serif'}
             )
-        ])
+        ]),
+
+        html.Hr(style={
+            'width': '99%',
+            'display': 'inline-block'
+        }),
 
     ], style={
         'borderBottom': 'thin lightgrey solid',
@@ -943,11 +1022,16 @@ app.layout = html.Div([
 #OUTPUTS:
 #1:     'portfolio_name_output'
 #2:     'portfolio_sharpe_ratio_output'
-#4:     'portfolio_return_output'
-#3:     'portfolio_std_output'
-#5:     'portfolio_graph_output'
-#6:     'portfolio_table_output'
-#7:     'portfolio_rebalance_popup_container'
+#3:     'portfolio_return_output'
+#4:     'portfolio_std_output'
+#5:     'portfolio_fixed_tc_output'
+#6:     'portfolio_variable_tc_output'
+#7:     'portfolio_total_tc_output'
+#8:     'portfolio_initial_budget_output'
+#9:     'portfolio_current_budget_output'
+#10:     'portfolio_graph_output'
+#11:     'portfolio_table_output'
+#12:     'portfolio_rebalance_popup_container'
 
 
 # activate DAX30 Dropdown menu when DAX30 Checklist is ticked
@@ -1047,6 +1131,11 @@ def set_SZSE_Dropdown(value_SZSE):
                Output('portfolio_sharpe_ratio_output', 'children'),
                Output('portfolio_return_output', 'children'),
                Output('portfolio_std_output', 'children'),
+               Output('portfolio_fixed_tc_output', 'children'),
+               Output('portfolio_variable_tc_output', 'children'),
+               Output('portfolio_total_tc_output', 'children'),
+               Output('portfolio_initial_budget_output', 'children'),
+               Output('portfolio_current_budget_output', 'children'),
                Output('portfolio_table_output', 'data'),
                Output('portfolio_table_output', 'columns'),
                Output('portfolio_rebalance_popup_container', 'style'),
@@ -1170,10 +1259,15 @@ def create_load_rebalance_portfolio(n_clicks_create,
         sharpe_children = portfolio_result[1]
         return_children = portfolio_result[2]
         std_children = portfolio_result[3]
-        table_data = portfolio_result[4]
-        table_columns = portfolio_result[5]
-        df_graph = portfolio_result[6]
-        graph_figure = portfolio_result[7]
+        tc_fix_children = portfolio_result[4]
+        tc_var_children = portfolio_result[5]
+        tc_total_chidlren = portfolio_result[6]
+        init_budget_children = portfolio_result[7]
+        curr_budget_children = portfolio_result[8]
+        table_data = portfolio_result[9]
+        table_columns = portfolio_result[10]
+        df_graph = portfolio_result[11]
+        graph_figure = portfolio_result[12]
         portfolio_rebalance_popup = {'display': 'block'}
 
         #save user to local SQL database
@@ -1183,7 +1277,12 @@ def create_load_rebalance_portfolio(n_clicks_create,
         return name_children, \
                sharpe_children, \
                return_children, \
-               std_children, \
+               std_children,\
+               tc_fix_children,\
+               tc_var_children,\
+               tc_total_chidlren,\
+               init_budget_children,\
+               curr_budget_children,\
                table_data, \
                table_columns, \
                portfolio_rebalance_popup,\
@@ -1208,19 +1307,29 @@ def create_load_rebalance_portfolio(n_clicks_create,
         sharpe_children = portfolio_result[1]
         return_children = portfolio_result[2]
         std_children = portfolio_result[3]
-        table_data = portfolio_result[4]
-        table_columns = portfolio_result[5]
-        df_graph = portfolio_result[6]
-        graph_figure = portfolio_result[7]
+        tc_fix_children = portfolio_result[4]
+        tc_var_children = portfolio_result[5]
+        tc_total_chidlren = portfolio_result[6]
+        init_budget_children = portfolio_result[7]
+        curr_budget_children = portfolio_result[8]
+        table_data = portfolio_result[9]
+        table_columns = portfolio_result[10]
+        df_graph = portfolio_result[11]
+        graph_figure = portfolio_result[12]
         portfolio_rebalance_popup = {'display': 'block'}
 
         return name_children, \
                sharpe_children, \
                return_children, \
                std_children, \
+               tc_fix_children, \
+               tc_var_children, \
+               tc_total_chidlren, \
+               init_budget_children, \
+               curr_budget_children, \
                table_data, \
                table_columns, \
-               portfolio_rebalance_popup,\
+               portfolio_rebalance_popup, \
                graph_figure
 
     ##portfolio_rebalance_button_input pressed: Rebalance current portfolio with new end date
@@ -1241,7 +1350,8 @@ def create_load_rebalance_portfolio(n_clicks_create,
             period_end = portfolio_time_period_rebalance_input
 
         #start optimization procedure
-        user.optimize_req(period_end=period_end)
+        user.rebalance_req(period_end=period_end)
+        #user.optimize_req(period_end=period_end)
 
         #retrieve & unpack results: #1 displayable output and #2 rebalancing layout
         portfolio_result = get_portfolio_result(user)
@@ -1249,10 +1359,15 @@ def create_load_rebalance_portfolio(n_clicks_create,
         sharpe_children = portfolio_result[1]
         return_children = portfolio_result[2]
         std_children = portfolio_result[3]
-        table_data = portfolio_result[4]
-        table_columns = portfolio_result[5]
-        df_graph = portfolio_result[6]
-        graph_figure = portfolio_result[7]
+        tc_fix_children = portfolio_result[4]
+        tc_var_children = portfolio_result[5]
+        tc_total_chidlren = portfolio_result[6]
+        init_budget_children = portfolio_result[7]
+        curr_budget_children = portfolio_result[8]
+        table_data = portfolio_result[9]
+        table_columns = portfolio_result[10]
+        df_graph = portfolio_result[11]
+        graph_figure = portfolio_result[12]
         portfolio_rebalance_popup = {'display': 'block'}
 
         #save user to local SQL database and override last portfolio_history (df)
@@ -1262,7 +1377,12 @@ def create_load_rebalance_portfolio(n_clicks_create,
         return name_children, \
                sharpe_children, \
                return_children, \
-               std_children, \
+               std_children,\
+               tc_fix_children,\
+               tc_var_children,\
+               tc_total_chidlren,\
+               init_budget_children,\
+               curr_budget_children,\
                table_data, \
                table_columns, \
                portfolio_rebalance_popup,\
@@ -1525,6 +1645,9 @@ def get_portfolio_result(user):
     r = 'Exp. return: {:.2f}% p.a.'.format(procedure.total_return)
     std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
 
+    initial_budget = 'Initial budget: EUR {:.2f}'.format(user.initial_budget)
+    current_budget = 'Current budget: EUR {:.2f}'.format(user.budget)
+
     #modify copy of gui_weights: round results, add share name and ISIN column and rename columns properly
     portfolio_table_output = procedure.gui_weights.copy()
     portfolio_table_output['percent_portfolio'] = portfolio_table_output['percent_portfolio'].apply(lambda x:x*100)
@@ -1555,7 +1678,21 @@ def get_portfolio_result(user):
     data = portfolio_table_output.to_dict('records')
     columns = [{'name': i, 'id': i} for i in portfolio_table_output.columns]
 
-    return user.id, s, r, std, data, columns, df_graph, figure
+    #calculate fixed, variable and total tc
+    fix_tc = 0
+    var_tc = 0
+    for dict_index in range(len(data)):
+        if data[dict_index]['Weight [%]'] > 0:
+            fix_tc += user.broker_fix
+        var_tc += (data[dict_index]['Amount [EUR]'] * user.broker_var)
+    tot_tc = fix_tc + var_tc
+
+    s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
+    fixed_tc = 'Fixed TC: {:.2f}'.format(fix_tc)
+    variable_tc = 'Variable TC: {:.2f}'.format(var_tc)
+    total_tc = 'Total TC: {:.2f}'.format(tot_tc)
+
+    return user.id, s, r, std, fixed_tc, variable_tc, total_tc, initial_budget, current_budget, data, columns, df_graph, figure
 
 ### Execute program
 if __name__ == '__main__':
