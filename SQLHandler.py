@@ -331,6 +331,7 @@ def getACP (startDate, endDate, comps):
     #result = result[dup]
     #long to wide
     result = result.pivot(index= 'date', columns= 'isin', values='acp')
+    print('blub')
     return result
 
 def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
@@ -652,6 +653,16 @@ def deleteUserByName(id):
         where userID = '{}';'''.format(id)
 
     cur.execute(command)
+    ES0177542018 | 2
+    FR0000125007 | 2
+    FR0013326246 | 2
+    GB0005405286 | 2
+    GB00B03MLX29 | 2
+    GB00B2B0DG97 | 2
+    GB00BDSFG982 | 2
+    IE00BZ12WP82 | 2
+    LU1598757687 | 3
+    NL0000200384 | 2
     con.commit()
     cur.close()
 
@@ -677,4 +688,28 @@ def getUserList():
     con.commit()
     result = pd.DataFrame(cur.fetchall())
     cur.close()
-    return result
+    if result.empty:
+        return []
+    return result[0].tolist()
+
+def deleteDup ():
+    """"
+    ES0177542018 | 2
+    FR0000125007 | 2
+    FR0013326246 | 2
+    GB0005405286 | 2
+    GB00B03MLX29 | 2
+    GB00B2B0DG97 | 2
+    GB00BDSFG982 | 2
+    IE00BZ12WP82 | 2
+    LU1598757687 | 3
+    NL0000200384 | 2
+    """
+    start()
+    con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+    cur = con.cursor()
+    command = """delete from acp where isin in ('ES0177542018', 'FR0000125007', 'FR0013326246',
+    'GB0005405286', 'GB00B03MLX29', 'GB00B2B0DG97', 'GB00BDSFG982', 'IE00BZ12WP82', 'LU1598757687', 'NL0000200384');"""
+    cur.execute(command)
+    con.commit()
+    cur.close()

@@ -54,7 +54,6 @@ class User():
         optimize_request.id = str(self.id) + "_opt_" + str(datetime.datetime.now())
         optimize_procedure = op.optimizeProcedure(optimize_request)
         optimize_procedure.optimize()
-        optimize_procedure.generate_guioutput()
         self.req_history.append([optimize_request,optimize_procedure.optimize_result])
 
 
@@ -66,7 +65,6 @@ class User():
         optimize_rebalance.id = str(self.id) + "_reb_" + str(datetime.datetime.now())
         optimize_procedure = op.optimizeProcedure(optimize_rebalance)
         optimize_procedure.optimize()
-        optimize_procedure.generate_guioutput()
         self.req_history.append([optimize_rebalance, optimize_procedure.optimize_result])
 
 

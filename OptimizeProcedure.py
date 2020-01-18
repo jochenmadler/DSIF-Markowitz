@@ -21,12 +21,13 @@ class optimizeData:
     #current_prices = None
     return_df = None
 
-    def __init__(self, data, time_interval = 'd'):
+    def __init__(self, data, time_interval):
 
         #ToDO:implement conversion to monthly data (test)
         if time_interval == 'm':
             data.index = pd.to_datetime(data.index)
-            data.resample('1M').max()
+            data_res = data.resample('1M').max()
+            data = data_res
 
         #ToDo:implement handling von NAs in data (zurückgestellt)
         #if data.isnull().values.any():
@@ -73,7 +74,7 @@ class optimizeProcedure():
         self.optimize_request = optimize_request
 
         raw_data = sh.getACP(optimize_request.user.period_start, optimize_request.period_end, optimize_request.user.ISIN_list)
-        self.optimize_data = optimizeData(raw_data)
+        self.optimize_data = optimizeData(raw_data, optimize_request.user.time_interval)
 
         # add different objFunctions here
         self.obj_function = of.objFunction_basicTrans()
@@ -118,10 +119,12 @@ class optimizeProcedure():
         )
 
         # update current budget after optimizing
+        self.generate_guioutput()
         self.optimize_request.user.budget = self.optimize_request.user.budget * (self.optimize_result.total_return/100 + 1)
         self.optimize_result.current_capital = self.optimize_request.user.budget
 
     def generate_guioutput(self):
+        print('')
         gui_weights = pd.DataFrame(columns=['percent_portfolio', 'amount_eur'], index = self.optimize_data.ISIN_list)
         test = self.optimize_result.security_weights.values
         gui_weights["percent_portfolio"] = self.optimize_result.security_weights.values[0]
