@@ -1,4 +1,4 @@
-# Version 1.1.2
+# Version 1.1.3
 import json
 import dash
 import dash_table
@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 # import function to call data from Alex' SQLHandler
 import SQLHandler as sql_handler
 #sql_handler.deleteAllUsers()
-userList = sql_handler.getUserList()[0].tolist()
+userList = sql_handler.getUserList()
 if userList:
     print('MESSAGE: User list:', userList)
 else:
