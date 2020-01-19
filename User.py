@@ -59,11 +59,25 @@ class User():
 
 
     def rebalance_req(self, period_end = '2019-10-01'):
+
+        period_start = self.req_history[-1][0].period_end
+        weigthts = self.req_history[-1][1].security_weights
+        prices = sh.getACP(period_start, period_end, self.ISIN_list)
+
+        first_row = prices.iloc[0,]
+        last_row = prices.iloc[-1,]
+        ret_total = sum(((last_row - first_row) / first_row) * weigthts.iloc[0,])
+        self.budget = self.budget * (ret_total + 1)
+
+
         optimize_rebalance = optimizeRebalance()
         optimize_rebalance.user = self
         optimize_rebalance.period_end = period_end
         optimize_rebalance.id = str(self.id) + "_reb_" + str(datetime.datetime.now())
         optimize_procedure = op.optimizeProcedure(optimize_rebalance)
+        optimize_procedure.optimize_result = op.optimizeResult()
+
+
         optimize_procedure.optimize()
         self.req_history.append([optimize_rebalance, optimize_procedure.optimize_result])
 

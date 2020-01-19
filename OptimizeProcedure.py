@@ -43,6 +43,7 @@ class optimizeData:
         self.period_list = data.index
         self.current_prices = data.iloc[len(self.period_list) - 1,]
 
+
         # convert adjPrice into returns in return_df
         return_df = pd.DataFrame(index=self.period_list[1:], columns=self.ISIN_list, dtype=float)
         for ct in range(1, len(self.period_list)):
@@ -62,6 +63,16 @@ class optimizeResult:
     current_capital = None
     dev_graph = None
     gui_weights = None
+
+    def __init__(self):
+        self.sharpe_ratio = -10000
+        self.total_volatility = 100000
+        self.total_return = -10000
+        self.transaction_cost = 0
+        self.security_weights = None
+        self.current_capital = None
+        self.dev_graph = None
+        self.gui_weights = None
 
 class optimizeProcedure():
     optimize_request = None
@@ -118,10 +129,11 @@ class optimizeProcedure():
 
         )
 
-        # update current budget after optimizing
         self.generate_guioutput()
-        self.optimize_request.user.budget = self.optimize_request.user.budget * (self.optimize_result.total_return/100 + 1)
+
+
         self.optimize_result.current_capital = self.optimize_request.user.budget
+
 
     def generate_guioutput(self):
         print('')
@@ -132,6 +144,5 @@ class optimizeProcedure():
         gui_weights.loc[:, 'amount_eur'] *= self.optimize_request.user.budget
         self.optimize_result.gui_weights = gui_weights
 
-        # ToDo: Implement the construction of the dev_graph
 
 
