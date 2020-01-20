@@ -653,6 +653,7 @@ def deleteUserByName(id):
         where userID = '{}';'''.format(id)
 
     cur.execute(command)
+    '''
     ES0177542018 | 2
     FR0000125007 | 2
     FR0013326246 | 2
@@ -663,6 +664,7 @@ def deleteUserByName(id):
     IE00BZ12WP82 | 2
     LU1598757687 | 3
     NL0000200384 | 2
+    '''
     con.commit()
     cur.close()
 
