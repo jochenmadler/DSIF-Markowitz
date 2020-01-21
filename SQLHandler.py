@@ -19,7 +19,6 @@ import psycopg2
 import User as us
 import OptimizeProcedure as op
 from django.db import transaction
-import numpy
 
 name = "Alex"
 database = "dsif"
@@ -109,38 +108,28 @@ def setUp(name):
         password = "zaubermaus"
         host = "localhost"
         port = "1997"
-        directory = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/AEXNEW.txt'
-        directory2 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/CAC40NEW.txt"
-        directory3 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/FTSE100.txt"
-        directory4 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/IBEX35.txt"
-        directory5 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SZSE.txt"
-        directory6 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/HSINEW.txt"
-        directory7 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DAXNEW.txt"
-        directory8 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/Nikkei300NEW.txt"
-        directory9 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/SP1500NEW.txt"
-        directory10 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Execs/DaxIndex.txt"
+        directory = '/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/AEX.txt'
+        directory2 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/CAC40NEW.txt"
+        directory3 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/DAX.txt"
+        directory4 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/FTSE100.txt"
+        directory5 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/SZSE.txt"
+        directory6 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/HSINEW.txt"
+        directory7 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/IBEX35.txt"
+        directory8 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/NIKKI300NEW.txt"
+        directory9 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/SP1500NEW.txt"
+        directory10 = "/Users/alex/Library/Mobile Documents/com~apple~CloudDocs/Desktop/Data Science in Finance/Data/Duplicates/DaxIndex.txt"
 
     clean()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
-    """
-    #create company realtion
-    command = '''create table companies
-        (name varchar (80),
-        isin varchar (80),
-        dscd varchar (80),
-        index varchar (80))
-    '''
-    cur.execute(command)
-    con.commit()
-    """
+
     # create the user realtion
     command = '''create table tableUsers
         (userID varchar (80) primary key,
         budget float8,
         initialBudget float8,
-        varBroker integer,
-        fixBroker integer,
+        varBroker float8,
+        fixBroker float8,
         split bool,
         periodStart date,
         timeInterval char (1),
@@ -326,17 +315,12 @@ def getACP (startDate, endDate, comps):
     # set the column names
     result.columns = ['isin', 'date', 'acp']
     # remove duplicates
-    #dup = result.duplicated( subset=['isin', 'date'], keep='first')
-    #dup = numpy.logical_not(dup)
-    #result = result[dup]
-    #long to wide
     result = result.pivot(index= 'date', columns= 'isin', values='acp')
-    print('blub')
     return result
 
 def findComp(searchterm, columnToSearch, columnsToReturn ,assetClass):
     start()
-    # columnstoReturn must be list in ,columnToSearch and  assetClass and searchterm a strings
+    #columnstoReturn must be list in ,columnToSearch and  assetClass and searchterm a strings
     #searchterm = searchterm.upper()
     #create connection
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
@@ -439,6 +423,7 @@ def saveResult (result, request):
     cur.close()
 
 def deleteUser (olduser):
+    #expects the usesr object as input
     start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -451,6 +436,7 @@ def deleteUser (olduser):
     cur.close()
 
 def deleteUserRelations ():
+    #deletes relation of the tableusers
     start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -462,6 +448,7 @@ def deleteUserRelations ():
     cur.close()
 
 def getUser (id):
+    #expects the user name aka id as string
     start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -496,6 +483,7 @@ def getUser (id):
     con.commit()
     requests = pd.DataFrame(cur.fetchall())
 
+    #puts them in the user list
     reqHistory = []
     i =0
     for index, row in requests.iterrows():
@@ -507,6 +495,7 @@ def getUser (id):
         reqHistory.append(tup)
         i += 1
     newUser.req_history = reqHistory
+
     return newUser
 
 def getResult (request):
@@ -553,6 +542,7 @@ def getResult (request):
     return newResult
 
 def clean():
+    #drops all existing tables
     start()
     con = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
     cur = con.cursor()
@@ -655,15 +645,15 @@ def deleteUserByName(id):
     cur.execute(command)
     '''
     ES0177542018 | 2
-    FR0000125007 | 2
-    FR0013326246 | 2
-    GB0005405286 | 2
-    GB00B03MLX29 | 2
-    GB00B2B0DG97 | 2
-    GB00BDSFG982 | 2
-    IE00BZ12WP82 | 2
-    LU1598757687 | 3
-    NL0000200384 | 2
+    FR0000125007 | 2 #ok
+    FR0013326246 | 2 #ok
+    GB0005405286 | 2 #ok
+    GB00B03MLX29 | 2 #ok
+    GB00B2B0DG97 | 2 #ok
+    GB00BDSFG982 | 2 #ok
+    IE00BZ12WP82 | 2 # ok
+    LU1598757687 | 3 #1 ok, #2 ok
+    NL0000200384 | 2 #ok
     '''
     con.commit()
     cur.close()
