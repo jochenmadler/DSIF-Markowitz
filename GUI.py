@@ -1,4 +1,4 @@
-# Version 1.1.3
+# Version 1.1.4
 import json
 import dash
 import dash_table
@@ -17,8 +17,6 @@ import SQLHandler as sql_handler
 userList = sql_handler.getUserList()
 if userList:
     print('MESSAGE: User list:', userList)
-else:
-    print('MESSAGE: User list: []')
 
 #import function to optimize portfolio from Marcl's OptimizeProcedure
 import User as u
@@ -117,7 +115,7 @@ app.layout = html.Div([
     html.Div([
 
         ##HEADER##
-        html.H3(children='Markowitz Portfolio Optimizer',
+        html.H3(children='Tradino Optimizer',
                 style={'textAlign': 'center'}
                 ),
 
@@ -192,7 +190,7 @@ app.layout = html.Div([
                           type='number',
                           min=0,
                           step=10,
-                          value=1000,
+                          value=10000,
                           )
             ], style={
                 'width': '50%',
@@ -550,7 +548,7 @@ app.layout = html.Div([
                                   type='number',
                                   min=0,
                                   max=100,
-                                  step=1,
+                                  step=0.001,
                                   placeholder='variable',
                                   )
                     ], style={
@@ -1152,6 +1150,7 @@ def set_SZSE_Dropdown(value_SZSE):
                State('portfolio_asset_IBEX35_input', 'value'),
                State('portfolio_asset_FTSE100_input', 'value'),
                State('portfolio_asset_SP1500_input', 'value'),
+               State('portfolio_asset_SP1500_input', 'value'),
                State('portfolio_asset_NIKKEI300_input', 'value'),
                State('portfolio_asset_HSI_input', 'value'),
                State('portfolio_asset_SZSE_input', 'value'),
@@ -1236,7 +1235,7 @@ def create_load_rebalance_portfolio(n_clicks_create,
         else:
             broker_fix = 0
         if portfolio_broker_var_input is not None:
-            broker_var = int(portfolio_broker_var_input)
+            broker_var = float(portfolio_broker_var_input/100)
         else:
             broker_var = 0
 
@@ -1342,6 +1341,8 @@ def create_load_rebalance_portfolio(n_clicks_create,
             print('MESSAGE: Portfolio could not be rebalanced. Username does not exist. Please enter another Username.')
             raise PreventUpdate
 
+## hier für Marcel:
+
         # get user from SQL data base
         user = sql_handler.getUser(portfolio_name_input)
         if len(portfolio_time_period_rebalance_input) > 10:
@@ -1351,7 +1352,6 @@ def create_load_rebalance_portfolio(n_clicks_create,
 
         #start optimization procedure
         user.rebalance_req(period_end=period_end)
-        #user.optimize_req(period_end=period_end)
 
         #retrieve & unpack results: #1 displayable output and #2 rebalancing layout
         portfolio_result = get_portfolio_result(user)
@@ -1641,9 +1641,9 @@ def construct_figure(base_date, user_period_end, df_graph, df_DAX30_graph):
 
 def get_portfolio_result(user):
     procedure = user.req_history[-1][1]
-    s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
+    s = 'Exp. sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
     r = 'Exp. return: {:.2f}% p.a.'.format(procedure.total_return)
-    std = 'Standard dev.: {:.2f}'.format(procedure.total_volatility)
+    std = 'Exp. Standard dev.: {:.2f}'.format(procedure.total_volatility)
 
     initial_budget = 'Initial budget: EUR {:.2f}'.format(user.initial_budget)
     current_budget = 'Current budget: EUR {:.2f}'.format(user.budget)
@@ -1687,7 +1687,6 @@ def get_portfolio_result(user):
         var_tc += (data[dict_index]['Amount [EUR]'] * user.broker_var)
     tot_tc = fix_tc + var_tc
 
-    s = 'Sharpe ratio: {:.2f}'.format(procedure.sharpe_ratio)
     fixed_tc = 'Fixed TC: {:.2f}'.format(fix_tc)
     variable_tc = 'Variable TC: {:.2f}'.format(var_tc)
     total_tc = 'Total TC: {:.2f}'.format(tot_tc)
